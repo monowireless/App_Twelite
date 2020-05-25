@@ -86,7 +86,7 @@ extern "C" {
  * - DI=G 検知時に連続送信し、DI=H になった後も１秒間(ON_PRESS_TRANSMIT_KEEP_TX_ms)継続送信する。
  * - 受信側は、500ms(ON_PRESS_TRANSMIT_RESET_ms) 無線電波を受信しなかった場合、DO=H に戻す
  */
-#define ON_PRESS_TRANSMIT
+#undef ON_PRESS_TRANSMIT
 
 /**
  * ボタン押し下げ時連続送信モード時の、無受信時に DO=H に戻すまでの時間[ms]
@@ -99,12 +99,24 @@ extern "C" {
 #define ON_PRESS_TRANSMIT_KEEP_TX_ms 1000
 
 /**
+ * 低レイテンシモード時で割り込みタイミングから、再度送信する
+ */
+#define LOW_LATENCY_DELAYED_TRANSMIT_COUNTER 7
+
+/**
  * 評価キット 002_L 使用時
  */
-#undef USE_DEV_KIT_002_L
 #ifdef USE_DEV_KIT_002_L
 # warning "USE_DEV_KIT_002_L is defined... Undef this for official release."
 #endif
+
+/*
+ * LCDモジュールの対応(実験的な実装)
+ */
+#define USE_I2C_ACM1620
+#define USE_I2C_AQM0802A
+
+#undef USE_I2C_LCD_TEST_CODE
 
 /****************************************************************************/
 /***        Type Definitions                                              ***/

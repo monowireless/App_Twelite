@@ -131,6 +131,19 @@ void vADC_Final(tsObjData_ADC *pData, tsSnsObj *pSnsObj, bool_t bDeinitAPR) {
 }
 
 
+/** @ingroup ADC
+ * ADCの計測値を読み取り、管理構造体に値を保存する。
+ * (JN514x の場合、直ぐ読まないと値が変化してしまう)
+ *
+ * @param pData
+ * @return 読み取った値
+ */
+uint16 u16ADC_ReadReg(tsObjData_ADC *pData) {
+	pData->u16RegSave = u16AHI_AdcRead();
+
+	return pData->u16RegSave;
+}
+
 /****************************************************************************/
 /***        Local Functions                                               ***/
 /****************************************************************************/
@@ -210,7 +223,9 @@ vfPrintf(&sSerStream, "\n\rE_ADC STARTED %x", au8AdcSrcTable[pObj->u8IdxMeasurui
 			// ADC が完了したので、結果データの格納と次のチャネルの ADC 開始処理 (E_SNSOBJ_STATE_MEASURE_NEXT 遷移) を行う。
 
 			// save ADC value
-			pObj->ai16Result[pObj->u8IdxMeasuruing] = (int16)u16AHI_AdcRead();
+			//pObj->ai16Result[pObj->u8IdxMeasuruing] = (int16)u16AHI_AdcRead();
+			pObj->ai16Result[pObj->u8IdxMeasuruing] = (int16)pObj->u16RegSave;
+
 #ifdef JN516x
 			pObj->ai16Result[pObj->u8IdxMeasuruing] <<= 2; // convert to 12bit
 #endif

@@ -29,6 +29,12 @@
 #include "config.h"
 #include "common.h"
 
+#include "Version.h"
+/*
+ * Version 番号
+ */
+#define VERSION_U32 ((VERSION_MAIN << 16) | (VERSION_SUB << 8) | (VERSION_VAR))
+
 /*
  * IOポートの定義
  */
@@ -46,11 +52,11 @@
 #define PORT_INPUT3 10
 #define PORT_INPUT4 9
 
-#define PORT_CONF1 0
-#define PORT_CONF2 1
+#define PORT_CONF1 16
+#define PORT_CONF2 18
 #define PORT_CONF3 19
 
-#define PORT_BAUD 16
+#define PORT_BAUD 4
 #else
 // TWE-Lite DIP (TWELITE の標準構成)
 #define PORT_OUT1 18
@@ -70,7 +76,7 @@
 #define PORT_BAUD 17
 #endif
 #elif defined(JN514x)
-#ifdef ON_PRESS_TRANSMIT
+#if 0
 #define PORT_OUT1 16 // KIT LED1
 #define PORT_OUT2 17 // KIT LED2
 #define PORT_OUT3 18 // KIT LED3
@@ -100,6 +106,7 @@
 #define PORT_CONF2 1
 #define PORT_CONF3 8
 #define PORT_BAUD 12
+#warning "PWM1->DIO13, PWM2->DIO11"
 #endif
 #endif
 

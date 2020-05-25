@@ -95,6 +95,8 @@ typedef struct
 
 	uint8     u8IdxMeasuruing; //!< 内部管理
 	int16     ai16Result[TEH_ADC_IDX_END]; //!< ADC 結果格納 (-32760 以下の値は未格納またはエラー)
+
+	uint16    u16RegSave; //!< ADCレジスタ値を保存する
 } tsObjData_ADC;
 
 
@@ -103,6 +105,7 @@ typedef struct
 /****************************************************************************/
 void vADC_Init(tsObjData_ADC *pData, tsSnsObj *pSnsObj, bool_t bInitAPR);
 void vADC_Final(tsObjData_ADC *pData, tsSnsObj *pSnsObj, bool_t bDeinitAPR);
+uint16 u16ADC_ReadReg(tsObjData_ADC *pData);
 
 /****************************************************************************/
 /***        Exported Variables                                            ***/

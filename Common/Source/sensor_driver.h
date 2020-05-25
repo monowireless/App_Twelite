@@ -19,7 +19,7 @@
 
 /** @file
  *
- * @defgroup SNSOBJ センサー入力処理
+ * @defgroup SNSDRV センサー入力処理
  * センサー入力時の入力状態処理およびセンサー間の抽象化を行う。
  */
 
@@ -29,11 +29,11 @@
 
 #include "ToCoNet_event.h"
 
-#define SENSOR_TAG_DATA_NOTYET (-32768) //!< センサー入力がまだ @ingroup SNSOBJ
-#define SENSOR_TAG_DATA_ERROR  (-32767)  //!< センサー入力がエラー @ingroup SNSOBJ
-#define IS_SENSOR_TAG_DATA_ERR(c) (c < -32760) //!< その他エラー @ingroup SNSOBJ
+#define SENSOR_TAG_DATA_NOTYET (-32768) //!< センサー入力がまだ @ingroup SNSDRV
+#define SENSOR_TAG_DATA_ERROR  (-32767)  //!< センサー入力がエラー @ingroup SNSDRV
+#define IS_SENSOR_TAG_DATA_ERR(c) (c < -32760) //!< その他エラー @ingroup SNSDRV
 
-/** @ingroup SNSOBJ
+/** @ingroup SNSDRV
  * センサーの処理状態
  */
 typedef enum
@@ -46,7 +46,7 @@ typedef enum
 	E_SNSOBJ_STATE_INACTIVE = 0xff //!< 動作しない状態
 } teState_SnsObj;
 
-/**  @ingroup SNSOBJ
+/**  @ingroup SNSDRV
  * 管理構造体
  */
 typedef struct {
@@ -56,7 +56,7 @@ typedef struct {
 	bool_t (*pvProcessSnsObj)(void *, teEvent); //!< イベント処理構造体
 } tsSnsObj;
 
-/** @ingroup SNSOBJ
+/** @ingroup SNSDRV
  * センサー状態マシンを駆動する。
  *
  * @param pObj 管理構造体
@@ -64,8 +64,8 @@ typedef struct {
  */
 void vSnsObj_Process(tsSnsObj *pObj, teEvent eEv);
 
-#define vSnsObj_NewState(o, s) ((o)->u8State = (s)) //!< 新しい状態へ遷移する @ingroup SNSOBJ
-#define bSnsObj_isComplete(o) ((o)->u8State == E_SNSOBJ_STATE_COMPLETE) //!< 完了状態か判定する @ingroup SNSOBJ
+#define vSnsObj_NewState(o, s) ((o)->u8State = (s)) //!< 新しい状態へ遷移する @ingroup SNSDRV
+#define bSnsObj_isComplete(o) ((o)->u8State == E_SNSOBJ_STATE_COMPLETE) //!< 完了状態か判定する @ingroup SNSDRV
 
 #define SENSOR_DRIVER_H_
 

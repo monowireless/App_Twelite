@@ -34,7 +34,7 @@
 #include "common.h"
 #include "Version.h"
 
-/**
+/** @ingroup MASTER
  * DI のポート番号のテーブル
  */
 const uint8 au8PortTbl_DIn[4] = {
@@ -44,7 +44,7 @@ const uint8 au8PortTbl_DIn[4] = {
 	PORT_INPUT4
 };
 
-/**
+/** @ingroup MASTER
  * DO のポート番号のテーブル
  */
 const uint8 au8PortTbl_DOut[4] = {
@@ -54,7 +54,7 @@ const uint8 au8PortTbl_DOut[4] = {
 	PORT_OUT4
 };
 
-/**
+/** @ingroup MASTER
  * タイマーデバイス番号のテーブル
  */
 const uint8 au8PortTbl_PWM_Timer[4] = {
@@ -71,7 +71,7 @@ const uint8 au8PortTbl_PWM_Timer[4] = {
 #endif
 };
 
-/**
+/** @ingroup MASTER
  * MODE設定ビットからデフォルト割り当てされる論理ＩＤテーブル
  */
 const uint8 au8IoModeTbl_To_LogicalID[8] = {

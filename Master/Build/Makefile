@@ -93,6 +93,11 @@ CFLAGS += -DDEBUG_OUTPUT
 #  OBJDIR_SUFF += _Debug
 #  TARGET_SUFF += _Debug
 #endif 
+ifeq ($(TWE_DEVKIT),002L)
+  CFLAGS += -DUSE_DEV_KIT_002_L
+  OBJDIR_SUFF += _KIT002L
+  TARGET_SUFF += _KIT002L
+endif
 
 ### Additional Src/Include Path
 # 下記に指定したディレクトリがソース検索パス、インクルード検索パスに設定

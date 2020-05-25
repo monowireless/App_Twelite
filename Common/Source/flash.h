@@ -40,10 +40,14 @@
  * フラッシュ格納データ構造体
  */
 typedef struct _tsFlashApp {
+	uint32 u32appkey;		//!<
+	uint32 u32ver;			//!<
+
 	uint32 u32appid;		//!< アプリケーションID
 	uint32 u32chmask;		//!< 使用チャネルマスク（３つまで）
 	uint8 u8id;				//!< 論理ＩＤ (子機 1～100まで指定)
 	uint8 u8ch;				//!< チャネル（未使用、チャネルマスクに指定したチャネルから選ばれる）
+	uint8 u8pow;			//!< 出力パワー (0-3)
 	uint8 u8role;			//!< 未使用(将来のための拡張)
 	uint8 u8layer;			//!< 未使用(将来のための拡張)
 

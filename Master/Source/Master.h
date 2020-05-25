@@ -50,7 +50,7 @@
  */
 typedef enum {
 	E_NWKMODE_MAC_DIRECT,//!< ネットワークは構成せず、ショートアドレスでの通信を行う
-	E_NWKMODE_LAYERTREE  //!< 中継ネットワークでの通信を行う
+	E_NWKMODE_LAYERTREE  //!< 中継ネットワークでの通信を行う(これは使用しない)
 } teNwkMode;
 
 /** @ingroup MASTER
@@ -190,19 +190,20 @@ typedef struct {
  * フラッシュ設定内容の列挙体
  */
 enum {
-	E_APPCONF_APPID,     //!<
-	E_APPCONF_CHMASK,    //!<
-	E_APPCONF_ID,        //!<
+	E_APPCONF_APPID,     //!< アプリケーションID
+	E_APPCONF_CHMASK,    //!< チャネルマスク
+	E_APPCONF_TX_POWER,  //!< TX 出力
+	E_APPCONF_ID,        //!< 8bitのID(ネットワークアドレス)
 	E_APPCONF_ROLE,      //!<
 	E_APPCONF_LAYER ,    //!<
-	E_APPCONF_SLEEP4,    //!<
-	E_APPCONF_SLEEP7,    //!<
-	E_APPCONF_FPS,       //!<
-	E_APPCONF_PWM_HZ,    //!<
+	E_APPCONF_SLEEP4,    //!< mode4 のスリープ期間設定
+	E_APPCONF_SLEEP7,    //!< mode7 のスリープ期間設定
+	E_APPCONF_FPS,       //!< 連続送信モードの秒あたりの送信数
+	E_APPCONF_PWM_HZ,    //!< PWM の周波数
 	E_APPCONF_SYS_HZ,    //!<
-	E_APPCONF_OPT,        //!< DIOの入力方法に関する設定
-	E_APPCONF_BAUD_SAFE, //!<
-	E_APPCONF_BAUD_PARITY,
+	E_APPCONF_OPT,       //!< DIOの入力方法に関する設定
+	E_APPCONF_BAUD_SAFE, //!< BPS ピンをGにしたときのボーレート
+	E_APPCONF_BAUD_PARITY, //!< BPS ピンをGにしたときのパリティ設定 (0:None, 1:Odd, 2:Even)
 	E_APPCONF_TEST
 };
 
@@ -219,13 +220,13 @@ enum {
 	E_APPCONF_ROLE_SILENT = 0x7F, //!< 何もしない（設定のみ)
 };
 
-#define E_APPCONF_OPT_LOW_LATENCY_INPUT 0x0001UL //!< Hi>Lo を検知後直ぐに送信する。
-#define E_APPCONF_OPT_NO_ADC_BASED_TRANSMIT 0x0010 //!< ADCの変化に応じた送信を禁止する
-#define E_APPCONF_OPT_ON_PRESS_TRANSMIT 0x0100UL //!< 押し下げ時のみ送信する特殊動作モード
+#define E_APPCONF_OPT_LOW_LATENCY_INPUT 0x0001UL //!< Hi>Lo を検知後直ぐに送信する。 @ingroup FLASH
+#define E_APPCONF_OPT_NO_ADC_BASED_TRANSMIT 0x0010 //!< ADCの変化に応じた送信を禁止する。 @ingroup FLASH
+#define E_APPCONF_OPT_ON_PRESS_TRANSMIT 0x0100UL //!< 押し下げ時のみ送信する特殊動作モード。 @ingroup FLASH
 
-#define IS_APPCONF_OPT_LOW_LATENCY_INPUT() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_LOW_LATENCY_INPUT)
-#define IS_APPCONF_OPT_NO_ADC_BASED_TRANSMIT() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_NO_ADC_BASED_TRANSMIT)
-#define IS_APPCONF_OPT_ON_PRESS_TRANSMIT() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_ON_PRESS_TRANSMIT)
+#define IS_APPCONF_OPT_LOW_LATENCY_INPUT() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_LOW_LATENCY_INPUT) //!< E_APPCONF_OPT_LOW_LATENCY_INPUT 判定 @ingroup FLASH
+#define IS_APPCONF_OPT_NO_ADC_BASED_TRANSMIT() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_NO_ADC_BASED_TRANSMIT) //!< E_APPCONF_OPT_NO_ADC_BASED_TRANSMIT判定 @ingroup FLASH
+#define IS_APPCONF_OPT_ON_PRESS_TRANSMIT() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_ON_PRESS_TRANSMIT) //!< E_APPCONF_OPT_ON_PRESS_TRANSMIT判定 @ingroup FLASH
 
 /** サイレントモードの判定マクロ  @ingroup FLASH */
 #define IS_APPCONF_ROLE_SILENT_MODE() (sAppData.sFlash.sData.u8role == E_APPCONF_ROLE_SILENT)
