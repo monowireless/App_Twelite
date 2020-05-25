@@ -79,6 +79,8 @@ typedef struct {
 
 	uint32 u32TxLastTick; //!< 最後に送った時刻
 	uint16 au16InputADC_LastTx[4]; //!< 最後に送信したデータ
+	uint32 u32RxLastTick; //!< 最後に受信した時刻
+
 	uint16 au16InputADC_History[4][4]; //!< ADCデータ履歴
 	uint16 u16Volt_LastTx; //!< 最後に送信した電圧
 	uint16 au16Volt_History[32]; //!< ADCデータ電圧履歴
@@ -162,6 +164,8 @@ typedef struct {
 	uint16 u16CtTimer0; //!< 64fps カウンタ。起動時に 0 クリアする
 	uint16 u16CtRndCt; //!< 起動時の送信タイミングにランダムのブレを作る
 
+	uint8 u8UartReqNum; //!< UART の要求番号
+
 	uint16 u16TxFrame; //!< 送信フレーム数
 	uint8 u8SerMsg_RequestNumber; //!< シリアルメッセージの要求番号
 } tsAppData;
@@ -196,6 +200,7 @@ enum {
 	E_APPCONF_FPS,       //!<
 	E_APPCONF_PWM_HZ,    //!<
 	E_APPCONF_SYS_HZ,    //!<
+	E_APPCONF_OPT,        //!< DIOの入力方法に関する設定
 	E_APPCONF_BAUD_SAFE, //!<
 	E_APPCONF_BAUD_PARITY,
 	E_APPCONF_TEST
@@ -213,6 +218,14 @@ enum {
 	E_APPCONF_ROLE_ENDDEVICE,     //!< NETWORKモードの子（未使用、スリープ対応）
 	E_APPCONF_ROLE_SILENT = 0x7F, //!< 何もしない（設定のみ)
 };
+
+#define E_APPCONF_OPT_LOW_LATENCY_INPUT 0x0001UL //!< Hi>Lo を検知後直ぐに送信する。
+#define E_APPCONF_OPT_NO_ADC_BASED_TRANSMIT 0x0010 //!< ADCの変化に応じた送信を禁止する
+#define E_APPCONF_OPT_ON_PRESS_TRANSMIT 0x0100UL //!< 押し下げ時のみ送信する特殊動作モード
+
+#define IS_APPCONF_OPT_LOW_LATENCY_INPUT() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_LOW_LATENCY_INPUT)
+#define IS_APPCONF_OPT_NO_ADC_BASED_TRANSMIT() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_NO_ADC_BASED_TRANSMIT)
+#define IS_APPCONF_OPT_ON_PRESS_TRANSMIT() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_ON_PRESS_TRANSMIT)
 
 /** サイレントモードの判定マクロ  @ingroup FLASH */
 #define IS_APPCONF_ROLE_SILENT_MODE() (sAppData.sFlash.sData.u8role == E_APPCONF_ROLE_SILENT)

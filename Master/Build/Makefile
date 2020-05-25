@@ -52,6 +52,7 @@ APPSRC += input_string.c
 APPSRC += sensor_driver.c
 APPSRC += adc.c
 APPSRC += duplicate_checker.c
+APPSRC += SMBus.c
 
 ### Target type
 # アプリケーション(.bin)をビルドするか、ライブラリ(.a)にするか指定します。

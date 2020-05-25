@@ -53,9 +53,10 @@ typedef struct _tsFlashApp {
 
 	uint32 u32baud_safe;	//!< ボーレート
 	uint8 u8parity;         //!< パリティ 0:none, 1:odd, 2:even
-	uint16 u16Sys_Hz;		//!< システムのティック周期
 
 	uint32 u32PWM_Hz;		//!< PWM変更設定周期
+
+	uint32 u32Opt;			//!< 色々オプション
 } tsFlashApp;
 
 /** @ingroup FLASH

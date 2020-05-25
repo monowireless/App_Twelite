@@ -85,28 +85,10 @@ const uint8 au8IoModeTbl_To_LogicalID[8] = {
 	127  // 10sec sleep (7F)
 };
 
-
 /** @ingroup MBUSA
  * MODBUS ASCII シリアル出力用のバッファ
  */
 extern uint8 au8SerOutBuff[];
-
-/** @ingroup MBUSA
- * ACK/NACK を出力する
- * @param pSer 出力先ストリーム
- * @param bAck TRUE:ACK, FALSE:NACK
- */
-void vModbOut_AckNack(tsFILE *pSer, bool_t bAck) {
-	uint8 *q = au8SerOutBuff;
-
-	S_OCTET(bAck ? 1 : 0);
-
-	vSerOutput_ModbusAscii(pSer,
-			SERCMD_ADDR_FR_MODULE,
-			bAck ? SERCMD_ID_ACK : SERCMD_ID_NACK,
-			au8SerOutBuff,
-			q - au8SerOutBuff);
-}
 
 /** @ingroup MBUSA
  * 自身のシリアル番号を出力する（起動時メッセージにも利用）
@@ -127,6 +109,25 @@ void vModbOut_MySerial(tsFILE *pSer) {
 			au8SerOutBuff,
 			q - au8SerOutBuff);
 }
+
+#if 0
+/** @ingroup MBUSA
+ * ACK/NACK を出力する
+ * @param pSer 出力先ストリーム
+ * @param bAck TRUE:ACK, FALSE:NACK
+ */
+void vModbOut_AckNack(tsFILE *pSer, bool_t bAck) {
+	uint8 *q = au8SerOutBuff;
+
+	S_OCTET(bAck ? 1 : 0);
+
+	vSerOutput_ModbusAscii(pSer,
+			SERCMD_ADDR_FR_MODULE,
+			bAck ? SERCMD_ID_ACK : SERCMD_ID_NACK,
+			au8SerOutBuff,
+			q - au8SerOutBuff);
+}
+
 
 /** @ingroup MBUSA
  * フラッシュ設定データ列を解釈する。入力は modbus のアドレス・コマンドを含むデータ列。
@@ -174,4 +175,4 @@ void vModbOut_Config(tsFILE *pSer, tsFlashApp *pConfig) {
 			au8SerOutBuff,
 			q - au8SerOutBuff);
 }
-
+#endif

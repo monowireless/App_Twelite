@@ -72,10 +72,39 @@ extern "C" {
 #define ADC_TIMEOUT_TO_FINE_CHECK 300 //!< ADCの変化判定を細かくする時間判定
 
 #undef IGNORE_ADC_CHAGNE //!< ADC の変化判定を無効にする（デバッグ用）
+#ifdef IGNORE_ADC_CHAGNE
+# warning "IGNORE_ADC_CHANGE is defined... Undef this for official release."
+#endif
 
 // スリープ間隔
 #define MODE4_SLEEP_DUR_ms 1000UL
 #define MODE7_SLEEP_DUR_ms 10000UL
+
+/**
+ * ボタン押し下げ時連続送信モード
+ *
+ * - DI=G 検知時に連続送信し、DI=H になった後も１秒間(ON_PRESS_TRANSMIT_KEEP_TX_ms)継続送信する。
+ * - 受信側は、500ms(ON_PRESS_TRANSMIT_RESET_ms) 無線電波を受信しなかった場合、DO=H に戻す
+ */
+#define ON_PRESS_TRANSMIT
+
+/**
+ * ボタン押し下げ時連続送信モード時の、無受信時に DO=H に戻すまでの時間[ms]
+ */
+#define ON_PRESS_TRANSMIT_RESET_ms 500
+
+/**
+ * ボタン押し下げ時連続送信モード時の、DI=H に戻った後に継続送信する時間 [ms]
+ */
+#define ON_PRESS_TRANSMIT_KEEP_TX_ms 1000
+
+/**
+ * 評価キット 002_L 使用時
+ */
+#undef USE_DEV_KIT_002_L
+#ifdef USE_DEV_KIT_002_L
+# warning "USE_DEV_KIT_002_L is defined... Undef this for official release."
+#endif
 
 /****************************************************************************/
 /***        Type Definitions                                              ***/

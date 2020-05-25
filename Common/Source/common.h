@@ -26,10 +26,33 @@
 #include "flash.h"
 #include "serialInputMgr.h"
 
+#include "config.h"
+#include "common.h"
+
 /*
  * IOポートの定義
  */
 #if defined(JN516x)
+#ifdef USE_DEV_KIT_002_L
+// 評価キットの定義
+#warning "IO CONF IS FOR JN516X DEVKIT!"
+#define PORT_OUT1 17 // KIT の LED
+#define PORT_OUT2 13
+#define PORT_OUT3 12
+#define PORT_OUT4 11
+
+#define PORT_INPUT1 2 // KIT の SW
+#define PORT_INPUT2 3
+#define PORT_INPUT3 10
+#define PORT_INPUT4 9
+
+#define PORT_CONF1 0
+#define PORT_CONF2 1
+#define PORT_CONF3 19
+
+#define PORT_BAUD 16
+#else
+// TWE-Lite DIP (TWELITE の標準構成)
 #define PORT_OUT1 18
 #define PORT_OUT2 19
 #define PORT_OUT3 4
@@ -45,7 +68,9 @@
 #define PORT_CONF3 3
 
 #define PORT_BAUD 17
+#endif
 #elif defined(JN514x)
+#ifdef ON_PRESS_TRANSMIT
 #define PORT_OUT1 16 // KIT LED1
 #define PORT_OUT2 17 // KIT LED2
 #define PORT_OUT3 18 // KIT LED3
@@ -53,13 +78,29 @@
 
 #define PORT_INPUT1 9 // KIT SW1
 #define PORT_INPUT2 10 // KIT SW2
-#define PORT_INPUT3 4
+#define PORT_INPUT3 11 // KIT SW3
+#define PORT_INPUT4 20 // KIT SW4
+
+#define PORT_CONF1 0
+#define PORT_CONF2 1
+#define PORT_CONF3 8
+#define PORT_BAUD 5
+#else
+#define PORT_OUT1 16 // KIT LED1
+#define PORT_OUT2 17 // KIT LED2
+#define PORT_OUT3 18 // KIT LED3
+#define PORT_OUT4 19 // KIT LED4
+
+#define PORT_INPUT1 9 // KIT SW1
+#define PORT_INPUT2 10 // KIT SW2
+#define PORT_INPUT3 5
 #define PORT_INPUT4 20 // KIT SW4
 
 #define PORT_CONF1 0
 #define PORT_CONF2 1
 #define PORT_CONF3 8
 #define PORT_BAUD 12
+#endif
 #endif
 
 #define PORT_OUT_MASK ((1UL << PORT_OUT1) | (1UL << PORT_OUT2) | (1UL << PORT_OUT3) | (1UL << PORT_OUT4))
@@ -104,11 +145,13 @@ extern const uint8 au8IoModeTbl_To_LogicalID[8]; //!< tePortConf2Mode から論�
 #define SERCMD_ADDR_CONV_TO_SHORT_ADDR(c) (c + 0x100) //!< 0..255 の論理番号をショートアドレスに変換する
 #define SERCMD_ADDR_CONV_FR_SHORT_ADDR(c) (c - 0x100) //!< ショートアドレスを論理番号に変換する
 
-#define SERCMD_ID_NACK 0x00
-#define SERCMD_ID_ACK 0x01
+#define SERCMD_ID_ACK 0xF0
 
 #define SERCMD_ID_REQUEST_IO_DATA 0x80
-#define SERCMD_IO_INFORM_IO_DATA 0x81
+#define SERCMD_ID_INFORM_IO_DATA 0x81
+
+#define SERCMD_ID_I2C_COMMAND 0x88
+#define SERCMD_ID_I2C_COMMAND_RESP 0x89
 
 #define SERCMD_ID_GET_MODULE_ADDRESS 0x90
 #define SERCMD_ID_INFORM_MODULE_ADDRESS 0x91

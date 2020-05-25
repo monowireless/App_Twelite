@@ -68,7 +68,7 @@ enum {
 /** @ingroup INPSTR
  * 管理構造体
  */
-typedef struct {
+typedef struct _tsInpStr_Context {
 	uint8 au8Data[32]; //!< 入力文字バッファ
 	uint8 u8State; //!< 状態
 	uint8 u8Idx; //!< 入力文字数（＝配列上のインデックス）
