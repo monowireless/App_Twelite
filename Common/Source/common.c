@@ -127,8 +127,8 @@ const uint8 au8IoModeTbl_To_LogicalID[8] = {
 	254, // ROUTER
 	123, // 32fps mode (7B)
 	124, // 1sec sleep (7C)
-	255, // NODEF
-	255, // NODEF
+	125, // RESPMODE (7D)
+	255, // nodef
 	127  // 10sec sleep (7F)
 };
 

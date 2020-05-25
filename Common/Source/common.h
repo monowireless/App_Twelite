@@ -148,6 +148,7 @@ typedef enum {
 	E_IO_MODE_ROUTER,             //!< E_IO_MODE_ROUTER
 	E_IO_MODE_CHILD_CONT_TX,      //!< E_IO_MODE_CHILD_CONT_TX
 	E_IO_MODE_CHILD_SLP_1SEC,     //!< E_IO_MODE_CHILD_SLP_1SEC
+	E_IO_MODE_CHILD_SLP_RECV,     //!< E_IO_MODE_CHILD_SLP_RECV
 	E_IO_MODE_CHILD_SLP_10SEC = 7,//!< E_IO_MODE_CHILD_SLP_10SEC
 } tePortConf2Mode;
 extern const uint8 au8IoModeTbl_To_LogicalID[8]; //!< tePortConf2Mode から論理アドレスへの変換
