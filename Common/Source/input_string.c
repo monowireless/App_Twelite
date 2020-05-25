@@ -1,9 +1,21 @@
-/*
- * input_string.c
+/****************************************************************************
+ * (C) Tokyo Cosmos Electric, Inc. (TOCOS) - 2013 all rights reserved.
  *
- *  Created on: 2013/06/02
- *      Author: seigo13
- */
+ * Condition to use: (refer to detailed conditions in Japanese)
+ *   - The full or part of source code is limited to use for TWE (TOCOS
+ *     Wireless Engine) as compiled and flash programmed.
+ *   - The full or part of source code is prohibited to distribute without
+ *     permission from TOCOS.
+ *
+ * 利用条件:
+ *   - 本ソースコードは、別途ソースコードライセンス記述が無い限り東京コスモス電機が著作権を
+ *     保有しています。
+ *   - 本ソースコードは、無保証・無サポートです。本ソースコードや生成物を用いたいかなる損害
+ *     についても東京コスモス電機は保証致しません。不具合等の報告は歓迎いたします。
+ *   - 本ソースコードは、東京コスモス電機が販売する TWE シリーズ上で実行する前提で公開
+ *     しています。他のマイコン等への移植・流用は一部であっても出来ません。
+ *
+ ****************************************************************************/
 
 #include <string.h>
 #include <jendefs.h>
@@ -25,7 +37,8 @@ void INPSTR_vInit(tsInpStr_Context *p, tsFILE *pSerStream) {
  * 文字列入力を開始する。
  *
  * @param p 管理構造体
- * @param u8DataType データ種別 (E_INPUTSTRING_DATATYPE_STRING/E_INPUTSTRING_DATATYPE_DEC/E_INPUTSTRING_DATATYPE_HEX)
+ * @param u8DataType データ種
+ * 別 (E_INPUTSTRING_DATATYPE_STRING/E_INPUTSTRING_DATATYPE_DEC/E_INPUTSTRING_DATATYPE_HEX)
  * @param u8Maxlen 最大入力長
  * @param u32Opt 何か値を格納しておきたい時に使う
  */

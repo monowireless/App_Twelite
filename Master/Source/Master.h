@@ -1,14 +1,21 @@
 /****************************************************************************
  * (C) Tokyo Cosmos Electric, Inc. (TOCOS) - 2013 all rights reserved.
  *
- * Condition to use:
+ * Condition to use: (refer to detailed conditions in Japanese)
  *   - The full or part of source code is limited to use for TWE (TOCOS
  *     Wireless Engine) as compiled and flash programmed.
  *   - The full or part of source code is prohibited to distribute without
  *     permission from TOCOS.
  *
+ * 利用条件:
+ *   - 本ソースコードは、別途ソースコードライセンス記述が無い限り東京コスモス電機が著作権を
+ *     保有しています。
+ *   - 本ソースコードは、無保証・無サポートです。本ソースコードや生成物を用いたいかなる損害
+ *     についても東京コスモス電機は保証致しません。不具合等の報告は歓迎いたします。
+ *   - 本ソースコードは、東京コスモス電機が販売する TWE シリーズ上で実行する前提で公開
+ *     しています。他のマイコン等への移植・流用は一部であっても出来ません。
+ *
  ****************************************************************************/
-
 
 /** @file
  * アプリケーションのメイン処理
@@ -54,8 +61,11 @@ typedef struct {
 	uint32 u32BtmUsed; //!< 利用対象ピンかどうか (0xFFFFFFFF: 未確定)
 	uint32 u32BtmChanged; //!< (0xFFFFFFFF: 未確定)
 
-	uint16 au16InputADC[4]; //!< (0xFFFF: 未確定)
-	uint16 au16OutputDAC[4]; //!< (0xFFFF: 未確定)
+	uint16 au16InputADC[4]; //!< (0xFFFF: 未確定) 入力ポートの ADC 値 [mV]
+	uint16 au16OutputDAC[4]; //!< (0xFFFF: 未確定) 送られてきた ADC 値 [mV]
+#ifdef JN514x
+	uint16 au16OutputDAC_val[2]; //!< (0xFFFF: 未確定) 送られてきた ADC 値 [12bit スケール値]
+#endif
 	uint16 u16Volt; //!< 12bits, 0xFFFF: 未確定
 	int16 i16Temp; //!< 12bits
 
@@ -78,6 +88,17 @@ typedef struct {
 
 #define HIST_VOLT_SCALE 5 //!< 電圧履歴数のスケーラ (2^HIST_VOLT_SCALE)  @ingroup MASTER
 #define HIST_VOLT_COUNT (1UL << HIST_VOLT_SCALE) //!< 電圧履歴数 @ingroup MASTER
+
+
+/** @ingroup MASTER
+ * IO 設定要求
+ */
+typedef struct {
+	uint8 u8IOports;          //!< 出力IOの状態 (1=Lo, 0=Hi)
+	uint8 u8IOports_use_mask; //!< 設定を行うポートなら TRUE
+	uint16 au16PWM_Duty[4];      //!< PWM DUTY 比 (0～1024)
+	uint8 au16PWM_use_mask[4];   //!< 設定を行うPWMポートなら TRUE
+} tsIOSetReq;
 
 /** @ingroup MASTER
  * アプリケーションの情報
@@ -103,7 +124,7 @@ typedef struct {
 
 	// Network mode
 	teNwkMode eNwkMode; //!< ネットワークモデル(未使用：将来のための拡張用)
-	uint8 u8NwAddr; //!< ネットワーク時の抽象アドレス 0:親機 1~:子機, 0xFF:通信しない
+	uint8 u8AppLogicalId; //!< ネットワーク時の抽象アドレス 0:親機 1~:子機, 0xFF:通信しない
 
 	// Network context
 	tsToCoNet_Nwk_Context *pContextNwk; //!< ネットワークコンテキスト(未使用)
@@ -165,14 +186,18 @@ typedef struct {
  * フラッシュ設定内容の列挙体
  */
 enum {
-	E_APPCONF_APPID, //!< E_APPCONF_APPID
-	E_APPCONF_CHMASK,//!< E_APPCONF_CHMASK
-	E_APPCONF_ID,    //!< E_APPCONF_CH
-	E_APPCONF_ROLE,  //!< E_APPCONF_ROLE
-	E_APPCONF_LAYER ,//!< E_APPCONF_LAYER
-	E_APPCONF_SLEEP4,
-	E_APPCONF_SLEEP7,
-	E_APPCONF_FPS,
+	E_APPCONF_APPID,     //!<
+	E_APPCONF_CHMASK,    //!<
+	E_APPCONF_ID,        //!<
+	E_APPCONF_ROLE,      //!<
+	E_APPCONF_LAYER ,    //!<
+	E_APPCONF_SLEEP4,    //!<
+	E_APPCONF_SLEEP7,    //!<
+	E_APPCONF_FPS,       //!<
+	E_APPCONF_PWM_HZ,    //!<
+	E_APPCONF_SYS_HZ,    //!<
+	E_APPCONF_BAUD_SAFE, //!<
+	E_APPCONF_BAUD_PARITY,
 	E_APPCONF_TEST
 };
 

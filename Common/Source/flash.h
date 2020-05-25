@@ -1,9 +1,21 @@
-/*
- * flash.h
+/****************************************************************************
+ * (C) Tokyo Cosmos Electric, Inc. (TOCOS) - 2013 all rights reserved.
  *
- *  Created on: 2012/11/23
- *      Author: seigo13
- */
+ * Condition to use: (refer to detailed conditions in Japanese)
+ *   - The full or part of source code is limited to use for TWE (TOCOS
+ *     Wireless Engine) as compiled and flash programmed.
+ *   - The full or part of source code is prohibited to distribute without
+ *     permission from TOCOS.
+ *
+ * 利用条件:
+ *   - 本ソースコードは、別途ソースコードライセンス記述が無い限り東京コスモス電機が著作権を
+ *     保有しています。
+ *   - 本ソースコードは、無保証・無サポートです。本ソースコードや生成物を用いたいかなる損害
+ *     についても東京コスモス電機は保証致しません。不具合等の報告は歓迎いたします。
+ *   - 本ソースコードは、東京コスモス電機が販売する TWE シリーズ上で実行する前提で公開
+ *     しています。他のマイコン等への移植・流用は一部であっても出来ません。
+ *
+ ****************************************************************************/
 
 /** @file
  *
@@ -38,6 +50,12 @@ typedef struct _tsFlashApp {
 	uint16 u16SleepDur_ms;	//!< mode4 スリープ期間[ms]
 	uint16 u16SleepDur_s; 	//!< mode7 スリープ期間[s]
 	uint8 u8Fps;			//!< mode3 毎秒送信回数 (4,8,16,32)
+
+	uint32 u32baud_safe;	//!< ボーレート
+	uint8 u8parity;         //!< パリティ 0:none, 1:odd, 2:even
+	uint16 u16Sys_Hz;		//!< システムのティック周期
+
+	uint32 u32PWM_Hz;		//!< PWM変更設定周期
 } tsFlashApp;
 
 /** @ingroup FLASH
@@ -53,5 +71,6 @@ typedef struct _tsFlash {
 
 bool_t bFlash_Read(tsFlash *psFlash, uint8 sector, uint32 offset);
 bool_t bFlash_Write(tsFlash *psFlash, uint8 sector, uint32 offset);
+bool_t bFlash_Erase(uint8 sector);
 
 #endif /* FLASH_H_ */
