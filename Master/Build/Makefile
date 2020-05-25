@@ -105,6 +105,10 @@ ifeq ($(TWE_DEVKIT),TOCOSTICK)
   TARGET_SUFF += _TOCOSTICK
 endif
 
+ifneq ($(VERSION_DESC),)
+  TARGET_SUFF += _$(VERSION_DESC)
+endif
+
 ### Additional Src/Include Path
 # 下記に指定したディレクトリがソース検索パス、インクルード検索パスに設定
 # されます。Makefile のあるディレクトリからの相対パスを指定します。

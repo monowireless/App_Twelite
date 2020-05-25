@@ -133,7 +133,11 @@
 
 // マップテーブル
 extern const uint8 au8PortTbl_DOut[4]; //!< IO番号(出力)のテーブル
-extern const uint8 au8PortTbl_DIn[4]; //!< IO番号(入力)のテーブル
+extern const uint8 *au8PortTbl_DIn;    //!< IO番号(入力)のテーブル
+extern uint32 u32PortInputMask;        //!< PORT_INPUT_MASK
+
+void vSetPortTblMap(uint8); //!< IO テーブルマップを変更する
+extern uint8 u8PortBaud; //!< ボーレートのポート番号
 
 /**
  * PORT_CONF1 ～ 3 による定義

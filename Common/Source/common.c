@@ -37,12 +37,59 @@
 /** @ingroup MASTER
  * DI のポート番号のテーブル
  */
-const uint8 au8PortTbl_DIn[4] = {
+const uint8 au8PortTbl_DIn_std[4] = {
 	PORT_INPUT1,
 	PORT_INPUT2,
 	PORT_INPUT3,
 	PORT_INPUT4
 };
+
+/** @ingroup MASTER
+ * DI のポート番号の副テーブル
+ */
+const uint8 au8PortTbl_DIn_swp[4] = {
+	5,
+	8,
+	15,
+	16
+};
+
+/** @ingroup MASTER
+ * DI のポート番号のテーブルポインタ
+ */
+const uint8 * au8PortTbl_DIn = au8PortTbl_DIn_std;
+
+/** @ingroup MASTER
+ * DI のポート番号のテーブルポインタ
+ */
+uint32 u32PortInputMask; // auPortTbl_DIn をマスク化した
+
+/** @ingroup MASTER
+ * ボーレート変更用のポート番号
+ */
+uint8 u8PortBaud;
+
+/** @ingroup MASTER
+ * テーブルを定義する。
+ * @param u8Tbl 0:主テーブル 1:副テーブル
+ */
+void vSetPortTblMap(uint8 u8Tbl) {
+	// テーブル配列の設定
+	if (u8Tbl == 1) {
+		au8PortTbl_DIn = au8PortTbl_DIn_swp;
+		u8PortBaud = 14;
+	} else {
+		au8PortTbl_DIn = au8PortTbl_DIn_std;
+		u8PortBaud = PORT_BAUD;
+	}
+
+	// マスクの生成
+	int i;
+	u32PortInputMask = 0;
+	for (i = 0; i < 4; i++) {
+		u32PortInputMask |= (1UL << au8PortTbl_DIn[i]);
+	}
+}
 
 /** @ingroup MASTER
  * DO のポート番号のテーブル

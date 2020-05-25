@@ -229,34 +229,47 @@ enum {
 #define E_APPCONF_OPT_REGULAR_PACKET_NO_DISP 0x0004UL //!< 定期送信パケットを表示しない(1秒置きと連射)
 #define E_APPCONF_OPT_NO_ADC_BASED_TRANSMIT 0x0010 //!< ADCの変化に応じた送信を禁止する。 @ingroup FLASH
 #define E_APPCONF_OPT_DISABLE_ADC 0x0020 //!< ADCを計測しない。 @ingroup FLASH
+#define E_APPCONF_OPT_ADC_TO_PWM_RAW_OUT 0x0040 //!< ADC絶対値でPWM出力する @ingroup FLASH
 #define E_APPCONF_OPT_ON_PRESS_TRANSMIT 0x0100UL //!< 押し下げ時のみ送信する特殊動作モード。 @ingroup FLASH
 #define E_APPCONF_OPT_ROUTING_CHILD 0x8000UL //!< 中継可能な子機設定。 @ingroup FLASH
 #define E_APPCONF_OPT_ROUTING_HOP2 0x1000UL //!< 中継段数を２にする。 @ingroup FLASH
 #define E_APPCONF_OPT_ROUTING_HOP3 0x2000UL //!< 中継段数な３にする。 @ingroup FLASH
 #define E_APPCONF_OPT_PWM_INVERT 0x10000UL //!< PWMをDUTYを反転する
 #define E_APPCONF_OPT_PWM_INIT_LOW 0x20000UL //!< PWMを起床時にLOとする
+#define E_APPCONF_OPT_PWM_MOVE_PORTS 0x80000UL //!< PWMの利用ポートを入れ替える (ただし I2C, BPS ピンは無効となる)
 #define E_APPCONF_OPT_DIO_LOW_ON_BOOT 0x100000 //!< 起床時にDIOを２秒だけLOにする (LED点灯)
 #define E_APPCONF_OPT_PWM_LOW_ON_BOOT 0x200000 //!< 起床時にPWMを２秒だけ(AI=100%値)にする (LED点灯)
+#define E_APPCONF_OPT_DO_INVERT 0x400000UL //!< DIO出力を反転する
+#define E_APPCONF_OPT_NO_PULLUP_FOR_OUTPUT 0x800000 //!< 出力ポート DO1-4, PWM1-4 のプルアップを停止する
 
 #define IS_APPCONF_OPT_LOW_LATENCY_INPUT() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_LOW_LATENCY_INPUT) //!< E_APPCONF_OPT_LOW_LATENCY_INPUT 判定 @ingroup FLASH
 #define IS_APPCONF_OPT_REGULAR_PACKET_NO_TRANSMIT() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_REGULAR_PACKET_NO_TRANSMIT) //!< E_APPCONF_OPT_REGULAR_PACKET_NO_TRANSMIT 判定 @ingroup FLASH
 #define IS_APPCONF_OPT_REGULAR_PACKET_NO_DISP() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_REGULAR_PACKET_NO_DISP) //!< E_APPCONF_OPT_REGULAR_PACKET_NO_DISP 判定 @ingroup FLASH
 #define IS_APPCONF_OPT_NO_ADC_BASED_TRANSMIT() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_NO_ADC_BASED_TRANSMIT) //!< E_APPCONF_OPT_NO_ADC_BASED_TRANSMIT判定 @ingroup FLASH
 #define IS_APPCONF_OPT_DISABLE_ADC() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_DISABLE_ADC) //!< E_APPCONF_OPT_DISABLE_ADC判定 @ingroup FLASH
+#define IS_APPCONF_OPT_ADC_TO_PWM_RAW_OUT() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_ADC_TO_PWM_RAW_OUT) //!< E_APPCONF_OPT_ADC_TO_PWM_RAW_OUT判定 @ingroup FLASH
 #define IS_APPCONF_OPT_ON_PRESS_TRANSMIT() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_ON_PRESS_TRANSMIT) //!< E_APPCONF_OPT_ON_PRESS_TRANSMIT判定 @ingroup FLASH
 #define IS_APPCONF_OPT_ROUTING_CHILD() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_ROUTING_CHILD) //!< E_APPCONF_OPT_ROUTING_END_DEVICE判定 @ingroup FLASH
 #define IS_APPCONF_OPT_ROUTING_HOP2() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_ROUTING_HOP2) //!< E_APPCONF_OPT_ROUTING_HOP2判定 @ingroup FLASH
 #define IS_APPCONF_OPT_ROUTING_HOP3() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_ROUTING_HOP3) //!< E_APPCONF_OPT_ROUTING_HOP3判定 @ingroup FLASH
 #define IS_APPCONF_OPT_PWM_INVERT() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_PWM_INVERT) //!< E_APPCONF_OPT_PWM_INVERT判定 @ingroup FLASH
 #define IS_APPCONF_OPT_PWM_INIT_LOW() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_PWM_INIT_LOW) //!< E_APPCONF_OPT_PWM_INIT_LOW判定 @ingroup FLASH
+#define IS_APPCONF_OPT_PWM_MOVE_PORTS() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_PWM_MOVE_PORTS) //!< E_APPCONF_OPT_PWM_MOVE_PORTS判定 @ingroup FLASH
 #define IS_APPCONF_OPT_DIO_LOW_ON_BOOT() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_DIO_LOW_ON_BOOT) //!< E_APPCONF_OPT_DIO_LOW_ON_BOOT判定 @ingroup FLASH
 #define IS_APPCONF_OPT_PWM_LOW_ON_BOOT() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_PWM_LOW_ON_BOOT) //!< E_APPCONF_OPT_PWM_LOW_ON_BOOT判定 @ingroup FLASH
+#define IS_APPCONF_OPT_DO_INVERT() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_DO_INVERT) //!< E_APPCONF_OPT_DO_INVERT判定 @ingroup FLASH
+#define IS_APPCONF_OPT_NO_PULLUP_FOR_OUTPUT() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_NO_PULLUP_FOR_OUTPUT) //!< E_APPCONF_OPT_NO_PULLUP_FOR_OUTPUT判定 @ingroup FLASH
 
 /** サイレントモードの判定マクロ  @ingroup FLASH */
 #define IS_APPCONF_ROLE_SILENT_MODE() (sAppData.sFlash.sData.u8role == E_APPCONF_ROLE_SILENT)
 
 /** PWM値の反転を考慮した値を設定する */
 #define _PWM(c) (IS_APPCONF_OPT_PWM_INVERT() ? (1024-c) : c)
+
+/** DO値をセットする */
+#define vDoSetLo(c) (IS_APPCONF_OPT_DO_INVERT() ? vPortSetHi(c) : vPortSetLo(c))
+#define vDoSetHi(c) (IS_APPCONF_OPT_DO_INVERT() ? vPortSetLo(c) : vPortSetHi(c))
+#define vDoSet_TrueAsLo(c,f) vPortSet_TrueAsLo((c), (IS_APPCONF_OPT_DO_INVERT() ? ((f) == FALSE) : (f)))
 
 #endif  /* MASTER_H_INCLUDED */
 

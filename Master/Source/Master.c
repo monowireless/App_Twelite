@@ -73,6 +73,8 @@
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
 /****************************************************************************/
+#define TX_NODELAY_AND_QUICK_BIT 1
+#define TX_NODELAY 2
 
 /****************************************************************************/
 /***        Type Definitions                                              ***/
@@ -288,10 +290,10 @@ void vProcessEvCorePwr(tsEvent *pEv, teEvent eEvent, uint32 u32evarg) {
 		// 始動時に一定時間全ポートをLoに設定する
 		if (eEvent == E_EVENT_NEW_STATE) {
 			if (IS_APPCONF_OPT_DIO_LOW_ON_BOOT()) {
-				vPortSetLo(PORT_OUT1);
-				vPortSetLo(PORT_OUT2);
-				vPortSetLo(PORT_OUT3);
-				vPortSetLo(PORT_OUT4);
+				vDoSetLo(PORT_OUT1);
+				vDoSetLo(PORT_OUT2);
+				vDoSetLo(PORT_OUT3);
+				vDoSetLo(PORT_OUT4);
 			}
 
 			if (IS_APPCONF_OPT_PWM_LOW_ON_BOOT()) {
@@ -305,10 +307,10 @@ void vProcessEvCorePwr(tsEvent *pEv, teEvent eEvent, uint32 u32evarg) {
 
 		if (PRSEV_u32TickFrNewState(pEv) > 2000) {
 			if (IS_APPCONF_OPT_DIO_LOW_ON_BOOT()) {
-				vPortSetHi(PORT_OUT1);
-				vPortSetHi(PORT_OUT2);
-				vPortSetHi(PORT_OUT3);
-				vPortSetHi(PORT_OUT4);
+				vDoSetHi(PORT_OUT1);
+				vDoSetHi(PORT_OUT2);
+				vDoSetHi(PORT_OUT3);
+				vDoSetHi(PORT_OUT4);
 			}
 
 			if (IS_APPCONF_OPT_PWM_LOW_ON_BOOT()) {
@@ -336,7 +338,7 @@ void vProcessEvCorePwr(tsEvent *pEv, teEvent eEvent, uint32 u32evarg) {
 
 				// ポートの値を設定する（変更フラグのあるものだけ）
 				for (i = 0; i < 4; i++) {
-					vPortSetHi(au8PortTbl_DOut[i]);
+					vDoSetHi(au8PortTbl_DOut[i]);
 					sAppData.sIOData_now.au8Output[i] = 0;
 				}
 			}
@@ -356,8 +358,19 @@ void vProcessEvCorePwr(tsEvent *pEv, teEvent eEvent, uint32 u32evarg) {
 			bool_t bCond = FALSE;
 			bool_t bRegular = FALSE;
 
+
 			if (sAppData.u16CtRndCt)
 				sAppData.u16CtRndCt--; // 定期パケット送信までのカウントダウン
+
+			// 初回送信を実施する
+			static bool_t bFirstTransmit = FALSE; // 電源投入直後の送信
+			if (!bFirstTransmit) {
+				if (!IS_APPCONF_OPT_REGULAR_PACKET_NO_TRANSMIT()) {
+					bCond = TRUE;
+					bRegular = TRUE;
+				}
+				bFirstTransmit = TRUE;
+			}
 
 			// ボタンに変化あり
 			if (!bCond && sAppData.sIOData_now.u32BtmChanged) {
@@ -390,7 +403,7 @@ void vProcessEvCorePwr(tsEvent *pEv, teEvent eEvent, uint32 u32evarg) {
 				bRegular = TRUE;
 			}
 
-			// レギュラー送信  // TODO レギュラー送信しないオプション
+			// レギュラー送信
 			if (!bCond && (sAppData.u16CtRndCt == 0)) {
 				if (!IS_APPCONF_OPT_REGULAR_PACKET_NO_TRANSMIT()) {
 					bCond = TRUE;
@@ -422,7 +435,7 @@ void vProcessEvCorePwr(tsEvent *pEv, teEvent eEvent, uint32 u32evarg) {
 				if (sAppData.sIOData_now.u32BtmChanged
 						&& (sAppData.sFlash.sData.u32Opt
 								& E_APPCONF_OPT_LOW_LATENCY_INPUT)) {
-					bQuick = TRUE;
+					bQuick = TX_NODELAY_AND_QUICK_BIT; // 低レイテンシ専用
 				}
 
 				// 送信要求
@@ -526,13 +539,9 @@ void vProcessEvCoreSlp(tsEvent *pEv, teEvent eEvent, uint32 u32evarg) {
 					sAppData.sIOData_now.au16InputADC[3] == 0xFFFF ?
 							9999 : sAppData.sIOData_now.au16InputADC[3]);
 
-#ifdef USE_SLOW_TX
-			// スローで送信
-			sAppData.sIOData_now.i16TxCbId = i16TransmitIoData(0x10, FALSE);
-#else
 			// クイックで送信
-			sAppData.sIOData_now.i16TxCbId = i16TransmitIoData(TRUE, FALSE);
-#endif
+			sAppData.sIOData_now.i16TxCbId = i16TransmitIoData(TX_NODELAY, FALSE); // QUICK BIT は設定しない
+
 			// 完了待ちをするため CbId を保存する。
 			// TODO: この時点で失敗した場合は、次の状態のタイムアウトで処理されるが非効率である。
 
@@ -882,9 +891,7 @@ void cbAppWarmStart(bool_t bStart) {
 		sAppData.bWakeupByButton = FALSE;
 		if (u8AHI_WakeTimerFiredStatus()) {
 			;
-		} else if (u32AHI_DioWakeStatus()
-				& ((1UL << PORT_INPUT1) | (1UL << PORT_INPUT2)
-						| (1UL << PORT_INPUT3) | (1UL << PORT_INPUT4))) {
+		} else if (u32AHI_DioWakeStatus() & u32PortInputMask) {
 			// woke up from DIO events
 			sAppData.bWakeupByButton = TRUE;
 		}
@@ -1103,7 +1110,7 @@ void cbToCoNet_vHwEvent(uint32 u32DeviceId, uint32 u32ItemBitmap) {
 			int i;
 			bool_t bTransmit = FALSE;
 
-			/* DIの入力ピンの番号を調べる。
+			/* DIの入力ピンの番号を調べる（低レイテンシモード）
 			 *
 			 *  ボタンを猿みたいに押してみたが DIO の割り込みは同時に２ビット報告されることは無く、
 			 *  順 次処理されるようだ。しかしながら、同時処理されても良いようなコードにしておく。
@@ -1138,16 +1145,16 @@ void cbToCoNet_vHwEvent(uint32 u32DeviceId, uint32 u32ItemBitmap) {
 
 			// いずれかのポートの割り込みが有効であった場合。
 			if (bTransmit) {
-				/* 速やかに送信する
+				/* 速やかに送信する（低レイテンシモード）
 				 *   ポートの変更対象フラグを、この割り込みで入力検知したものとする。
 				 *   そうしないと、関係ないビットが変更されてしまう
 				 */
 				uint32 u32used = sAppData.sIOData_now.u32BtmUsed; // 関数呼び出し中だけ値を変更する
 				sAppData.sIOData_now.u32BtmUsed = u32ItemBitmap
-						& PORT_INPUT_MASK; // 割り込みでLoになったDINだけ変更対照として送信する
-				sAppData.sIOData_now.i16TxCbId = i16TransmitIoData(TRUE, FALSE); // 送信処理を行う
+						& u32PortInputMask; // 割り込みでLoになったDINだけ変更対照として送信する
+				sAppData.sIOData_now.i16TxCbId = i16TransmitIoData(TX_NODELAY_AND_QUICK_BIT, FALSE); // 送信処理を行う
 				sAppData.sIOData_now.u32BtmUsed = u32used
-						| (u32ItemBitmap & PORT_INPUT_MASK); //値を復元する
+						| (u32ItemBitmap & u32PortInputMask); //値を復元する
 			}
 		}
 		break;
@@ -1220,7 +1227,7 @@ void cbToCoNet_vHwEvent(uint32 u32DeviceId, uint32 u32ItemBitmap) {
 						sAppData.sIOData_now.u32BtmChanged |= bmChanged; // 変化フラグはアプリケーションタスクに変更させる
 					} else {
 						// 初回確定時(スリープ復帰後も含む)
-						sAppData.sIOData_now.u32BtmChanged = bmChanged; // 初回は変化を報告
+						sAppData.sIOData_now.u32BtmChanged = 0; // 初回は報告しない
 					}
 
 					// IO確定ビットを立てる
@@ -1232,7 +1239,7 @@ void cbToCoNet_vHwEvent(uint32 u32DeviceId, uint32 u32ItemBitmap) {
 			if (sAppData.u8IOFixState && sAppData.sIOData_now.u32BtmChanged
 					&& (sAppData.sFlash.sData.u32Opt
 							& E_APPCONF_OPT_LOW_LATENCY_INPUT)) {
-				sAppData.sIOData_now.i16TxCbId = i16TransmitIoData(TRUE, FALSE);
+				sAppData.sIOData_now.i16TxCbId = i16TransmitIoData(TX_NODELAY_AND_QUICK_BIT, FALSE);
 				sAppData.sIOData_now.u32BtmChanged = 0;
 			}
 		}
@@ -1487,7 +1494,8 @@ PUBLIC uint8 cbToCoNet_u8HwInt(uint32 u32DeviceId, uint32 u32ItemBitmap) {
  * - I2Cの初期化
  *
  * @param f_warm_start TRUE:スリープ復帰時
- */PRIVATE void vInitHardware(int f_warm_start) {
+ */
+static void vInitHardware(int f_warm_start) {
 	int i;
 
 	// メモリのクリア
@@ -1497,8 +1505,32 @@ PUBLIC uint8 cbToCoNet_u8HwInt(uint32 u32DeviceId, uint32 u32ItemBitmap) {
 	memset(&sTimerPWM[2], 0, sizeof(tsTimerContext));
 	memset(&sTimerPWM[3], 0, sizeof(tsTimerContext));
 
-	// 出力の設定
+	// ポートテーブルの設定
+#ifdef JN516x
+	if (!IS_APPCONF_OPT_PWM_MOVE_PORTS()) {
+		vSetPortTblMap(0); // 主テーブルを選択
+		if (IS_APPCONF_OPT_NO_PULLUP_FOR_OUTPUT()) {
+			vAHI_DoSetPullup(0x0, 0x3); //DO0,1のプルアップをOFFにする
+			vPortDisablePullup(5);
+			vPortDisablePullup(8);
+		}
+	} else {
+		vSetPortTblMap(1); // 副テーブルを選択
 
+		if (IS_APPCONF_OPT_NO_PULLUP_FOR_OUTPUT()) {
+			vPortDisablePullup(11);
+			vPortDisablePullup(12);
+			vPortDisablePullup(13);
+			vPortDisablePullup(17);
+		}
+	}
+
+#else
+	// JN514x ではポート入れ替えは意味が無いので無効
+	vSetPortTblMap(0);
+#endif
+
+	// 出力の設定
 #ifdef SET_DO_ON_SLEEP
 	if (sAppData.u8Mode == E_IO_MODE_CHILD_SLP_1SEC || sAppData.u8Mode == E_IO_MODE_CHILD_SLP_10SEC) {
 		for (i = 0; i < 4; i++) {
@@ -1508,12 +1540,17 @@ PUBLIC uint8 cbToCoNet_u8HwInt(uint32 u32DeviceId, uint32 u32ItemBitmap) {
 #endif
 	{
 		for (i = 0; i < 4; i++) {
+			// オプションビットによるプルアップの停止
+			if (IS_APPCONF_OPT_NO_PULLUP_FOR_OUTPUT()) {
+				vPortDisablePullup(au8PortTbl_DOut[i]);
+			}
+
+			// 出力設定
 			vPortAsOutput(au8PortTbl_DOut[i]);
 			if (sAppData.sIOData_reserve.au8Output[i] != 0xFF) {
-				vPortSet_TrueAsLo(au8PortTbl_DOut[i],
-						sAppData.sIOData_reserve.au8Output[i]);
+				vDoSet_TrueAsLo(au8PortTbl_DOut[i], sAppData.sIOData_reserve.au8Output[i]);
 			} else {
-				vPortSetHi(au8PortTbl_DOut[i]);
+				vDoSetHi(au8PortTbl_DOut[i]);
 			}
 		}
 	}
@@ -1526,8 +1563,8 @@ PUBLIC uint8 cbToCoNet_u8HwInt(uint32 u32DeviceId, uint32 u32ItemBitmap) {
 	// v1.3 低レイテンシで入力を行う処理
 	if (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_LOW_LATENCY_INPUT) {
 		// 割り込みを有効にする
-		vAHI_DioInterruptEnable(PORT_INPUT_MASK, 0); // 割り込みの登録
-		vAHI_DioInterruptEdge(0, PORT_INPUT_MASK); // 割り込みエッジの登録
+		vAHI_DioInterruptEnable(u32PortInputMask, 0); // 割り込みの登録
+		vAHI_DioInterruptEdge(0, u32PortInputMask); // 割り込みエッジの登録
 	}
 
 	// モード設定
@@ -1539,15 +1576,17 @@ PUBLIC uint8 cbToCoNet_u8HwInt(uint32 u32DeviceId, uint32 u32ItemBitmap) {
 
 	// UART 設定
 	{
-		vPortAsInput(PORT_BAUD);
+		bool_t bPortBaud = FALSE;
+		vPortAsInput(u8PortBaud);
+		bPortBaud = bPortRead(u8PortBaud);
 
-		uint32 u32baud = bPortRead(PORT_BAUD) ? UART_BAUD_SAFE : UART_BAUD;
+		uint32 u32baud = bPortBaud ? UART_BAUD_SAFE : UART_BAUD;
 		tsUartOpt sUartOpt;
 
 		memset(&sUartOpt, 0, sizeof(tsUartOpt));
 
 		// BAUD ピンが GND になっている場合、かつフラッシュの設定が有効な場合は、設定値を採用する (v1.0.3)
-		if (sAppData.bFlashLoaded && bPortRead(PORT_BAUD)) {
+		if (sAppData.bFlashLoaded && bPortBaud) {
 			u32baud = sAppData.sFlash.sData.u32baud_safe;
 			sUartOpt.bHwFlowEnabled = FALSE;
 			sUartOpt.bParityEnabled = UART_PARITY_ENABLE;
@@ -1573,7 +1612,6 @@ PUBLIC uint8 cbToCoNet_u8HwInt(uint32 u32DeviceId, uint32 u32ItemBitmap) {
 		} else {
 			vSerialInit(u32baud, NULL );
 		}
-
 	}
 
 	// ADC3/4 のピンのプルアップを廃止する
@@ -1597,11 +1635,7 @@ PUBLIC uint8 cbToCoNet_u8HwInt(uint32 u32DeviceId, uint32 u32ItemBitmap) {
 #ifdef JN516x
 	vAHI_TimerFineGrainDIOControl(0x7); // bit 0,1,2 をセット (TIMER0 の各ピンを解放する, PWM1..4 は使用する)
 #else
-#ifdef ON_PRESS_TRANSMIT
-			vAHI_TimerFineGrainDIOControl(0x7F); // PWM出力は無効に
-#else
-			vAHI_TimerFineGrainDIOControl(0x1F); // PWM1, PWM2 のみ対応
-#endif
+	vAHI_TimerFineGrainDIOControl(0x1F); // PWM1, PWM2 のみ対応
 #endif
 
 	// 秒64回のTIMER0の初期化と稼働
@@ -1617,11 +1651,9 @@ PUBLIC uint8 cbToCoNet_u8HwInt(uint32 u32DeviceId, uint32 u32ItemBitmap) {
 
 	// button Manager (for Input)
 #ifdef USE_I2C_PORT_AS_OTHER_FUNCTION
-	sAppData.sBTM_Config.bmPortMask = (1UL << PORT_INPUT1)
-			| (1UL << PORT_INPUT2) | (1UL << PORT_INPUT3) | (1UL << PORT_INPUT4)
-			| (1UL << 14) | (1UL << 15);
+	sAppData.sBTM_Config.bmPortMask = u32PortInputMask | (1UL << 14) | (1UL << 15);
 #else
-	sAppData.sBTM_Config.bmPortMask = (1UL << PORT_INPUT1) | (1UL << PORT_INPUT2) | (1UL << PORT_INPUT3) | (1UL << PORT_INPUT4);
+	sAppData.sBTM_Config.bmPortMask = u32PortInputMask;
 #endif
 
 	if (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_LOW_LATENCY_INPUT) {
@@ -1680,7 +1712,11 @@ PUBLIC uint8 cbToCoNet_u8HwInt(uint32 u32DeviceId, uint32 u32ItemBitmap) {
 	vTimerConfig(&sTimerPWM[3]);
 	vTimerStart(&sTimerPWM[3]);
 #elif defined(JN516x)
-	vAHI_TimerSetLocation(E_AHI_TIMER_1, TRUE, TRUE);
+	if (!IS_APPCONF_OPT_PWM_MOVE_PORTS()) {
+		vAHI_TimerSetLocation(E_AHI_TIMER_1, TRUE, TRUE); // DIO5, DO1, DO2, DIO8
+	} else {
+		vAHI_TimerSetLocation(E_AHI_TIMER_1, FALSE, FALSE); // DIO11-13,17, not use DO1,2
+	}
 
 	sTimerPWM[0].u8Device = E_AHI_DEVICE_TIMER1;
 	sTimerPWM[1].u8Device = E_AHI_DEVICE_TIMER2;
@@ -1698,7 +1734,9 @@ PUBLIC uint8 cbToCoNet_u8HwInt(uint32 u32DeviceId, uint32 u32ItemBitmap) {
 	vPortAsInput(14);
 	vPortAsInput(15);
 #else
-	vSMBusInit();
+	if (!IS_APPCONF_OPT_PWM_MOVE_PORTS()) { // PWM ポート入れ替え時は I2C は無効
+		vSMBusInit();
+	}
 #endif
 }
 
@@ -2027,7 +2065,7 @@ static void vProcessInputByte(uint8 u8Byte) {
 		break;
 
 	case 'y': // set application role
-		V_PRINT("Input mode7 sleep dur[ms] (DEC:0-10000): ");
+		V_PRINT("Input mode7 sleep dur[s] (DEC:0-10000): ");
 		INPSTR_vStart(&sSerInpStr, E_INPUTSTRING_DATATYPE_DEC, 5,
 				E_APPCONF_SLEEP7);
 		break;
@@ -2467,7 +2505,9 @@ static void vProcessSerialCmd(tsModbusCmd *pSer) {
 
 		case SERCMD_ID_I2C_COMMAND:
 #ifndef USE_I2C_PORT_AS_OTHER_FUNCTION
-			vProcessI2CCommand(pSer->au8data, pSer->u16len, SERCMD_ADDR_TO_MODULE);
+			if (!IS_APPCONF_OPT_PWM_MOVE_PORTS()) {
+				vProcessI2CCommand(pSer->au8data, pSer->u16len, SERCMD_ADDR_TO_MODULE);
+			}
 #endif
 			break;
 
@@ -2963,11 +3003,9 @@ static int16 i16TransmitIoData(bool_t bQuick, bool_t bRegular) {
 	S_BE_DWORD(ToCoNet_u32GetSerial());  // シリアル番号
 	S_OCTET(
 			IS_LOGICAL_ID_PARENT(sAppData.u8AppLogicalId) ? LOGICAL_ID_CHILDREN : LOGICAL_ID_PARENT); // 宛先
-#ifdef USE_SLOW_TX
-	S_BE_WORD(sAppData.u32CtTimer0 & 0x7FFF); // タイムスタンプ
-#else
-	S_BE_WORD((sAppData.u32CtTimer0 & 0x7FFF) + (bQuick == TRUE ? 0x8000 : 0)); // タイムスタンプ
-#endif
+
+	S_BE_WORD((sAppData.u32CtTimer0 & 0x7FFF) + (bQuick == TX_NODELAY_AND_QUICK_BIT ? 0x8000 : 0)); // タイムスタンプ
+
 	// bQuick 転送する場合は MSB をセットし、優先パケットである処理を行う
 	S_OCTET(0); // 中継フラグ
 
@@ -3001,8 +3039,14 @@ static int16 i16TransmitIoData(bool_t bQuick, bool_t bRegular) {
 	}
 
 	// ボタンのビットマップ使用フラグ (１度でもLoになったポートは１になる）
-	S_OCTET(
-			( (sAppData.sIOData_now.u32BtmUsed & (1UL << PORT_INPUT1) ? 1 : 0) | (sAppData.sIOData_now.u32BtmUsed & (1UL << PORT_INPUT2) ? 2 : 0) | (sAppData.sIOData_now.u32BtmUsed & (1UL << PORT_INPUT3) ? 4 : 0) | (sAppData.sIOData_now.u32BtmUsed & (1UL << PORT_INPUT4) ? 8 : 0) ));
+	{
+		uint8 i, c = 0x0;
+
+		for (i = 0; i < 4; i++) {
+			c |= (sAppData.sIOData_now.u32BtmUsed & (1UL << au8PortTbl_DIn[i])) ? (1 << i) : 0;
+		}
+		S_OCTET(c);
+	}
 
 	// ADC 部のエンコード
 	uint8 u8LSBs = 0;
@@ -3386,7 +3430,7 @@ static void vReceiveIoData(tsRxDataApp *pRx) {
 	// ポートの値を設定する（変更フラグのあるものだけ）
 	for (i = 0, j = 1; i < 4; i++, j <<= 1) {
 		if (u8ButtonChanged & j) {
-			vPortSet_TrueAsLo(au8PortTbl_DOut[i], u8ButtonState & j);
+			vDoSet_TrueAsLo(au8PortTbl_DOut[i], u8ButtonState & j);
 #ifdef USE_I2C_LCD_TEST_CODE
 			if ((u8ButtonState & j) && sAppData.sIOData_now.au8Output[i] == 0) {
 				// 押し下げ時に限って処理する
@@ -3437,21 +3481,29 @@ static void vReceiveIoData(tsRxDataApp *pRx) {
 
 			sAppData.sIOData_now.au16OutputPWMDuty[i] = iR;
 #else
-			int32 iR = (uint32) u16Adc * 2 * 1024 / u16Volt; // スケールは 0～Vcc/2 なので 2倍する
-			// y = 1.15x - 0.05 の線形変換
-			//   = (115x-5)/100 = (23x-1)/20 = 1024*(23x-1)/20/1024 = 51.2*(23x-1)/1024 ~= 51*(23x-1)/1024
-			// iS/1024 = 51*(23*iR/1024-1)/1024
-			// iS      = (51*23*iR - 51*1024)/1024
-			int32 iS = 51 * 23 * iR - 51 * 1024;
-			if (iS <= 0) {
-				iS = 0;
-			} else {
-				iS >>= 10; // 1024での割り算
-				if (iS >= 1024) { // DUTY は 0..1024 で正規化するので最大値は 1024。
+			int32 iS;
+			if (IS_APPCONF_OPT_ADC_TO_PWM_RAW_OUT()) { // ADC の絶対電圧で PWM の DUTY を決める
+				// 1800mV で正規化する
+				iS = (uint32)u16Adc * 1024 / 1800;
+				if (iS >= 1024) {
 					iS = 1024;
 				}
+			} else { // ADC 電圧を Vcc で相対化して PWM の DUTY を決める
+				int32 iR = (uint32) u16Adc * 2 * 1024 / u16Volt; // スケールは 0～Vcc/2 なので 2倍する
+				// y = 1.15x - 0.05 の線形変換
+				//   = (115x-5)/100 = (23x-1)/20 = 1024*(23x-1)/20/1024 = 51.2*(23x-1)/1024 ~= 51*(23x-1)/1024
+				// iS/1024 = 51*(23*iR/1024-1)/1024
+				// iS      = (51*23*iR - 51*1024)/1024
+				iS = 51 * 23 * iR - 51 * 1024;
+				if (iS <= 0) {
+					iS = 0;
+				} else {
+					iS >>= 10; // 1024での割り算
+					if (iS >= 1024) { // DUTY は 0..1024 で正規化するので最大値は 1024。
+						iS = 1024;
+					}
+				}
 			}
-
 			sAppData.sIOData_now.au16OutputPWMDuty[i] = iS;
 #endif
 
@@ -3617,7 +3669,7 @@ static void vReceiveIoSettingRequest(tsRxDataApp *pRx) {
 		// ポートの値を設定する（変更フラグのあるものだけ）
 		for (i = 0, j = 1; i < 4; i++, j <<= 1) {
 			if (u8ButtonChanged & j) {
-				vPortSet_TrueAsLo(au8PortTbl_DOut[i], u8ButtonState & j);
+				vDoSet_TrueAsLo(au8PortTbl_DOut[i], u8ButtonState & j);
 				sAppData.sIOData_now.au8Output[i] = u8ButtonState & j;
 			}
 		}
@@ -3838,7 +3890,9 @@ static void vReceiveSerMsg(tsRxDataApp *pRx) {
 				if (au8SerBuffRx[1] == SERCMD_ID_I2C_COMMAND) {
 					// I2C の処理
 #ifndef USE_I2C_PORT_AS_OTHER_FUNCTION
-					vProcessI2CCommand(au8SerBuffRx, sSerSeqRx.u16DataLen, sSerSeqRx.u8IdSender);
+					if (!IS_APPCONF_OPT_PWM_MOVE_PORTS()) {
+						vProcessI2CCommand(au8SerBuffRx, sSerSeqRx.u16DataLen, sSerSeqRx.u8IdSender);
+					}
 #endif
 				} else {
 					// 受信データの出力
@@ -4130,15 +4184,15 @@ static void vSleep(uint32 u32SleepDur_ms, bool_t bPeriodic, bool_t bDeep) {
 	memcpy(&sAppData.sIOData_reserve, &sAppData.sIOData_now, sizeof(tsIOData));
 
 	// stop interrupt source, if interrupt source is still running.
-	vAHI_DioInterruptEnable(0, PORT_INPUT_MASK); // 割り込みの解除）
+	vAHI_DioInterruptEnable(0, u32PortInputMask); // 割り込みの解除）
 
 	// set UART Rx port as interrupt source
-	vAHI_DioSetDirection(PORT_INPUT_MASK, 0); // set as input
+	vAHI_DioSetDirection(u32PortInputMask, 0); // set as input
 
 	(void) u32AHI_DioInterruptStatus(); // clear interrupt register
-	vAHI_DioWakeEnable(PORT_INPUT_MASK, 0); // also use as DIO WAKE SOURCE
-	vAHI_DioWakeEdge(0, PORT_INPUT_MASK); // 割り込みエッジ（立下りに設定）
-	// vAHI_DioWakeEnable(0, PORT_INPUT_MASK); // DISABLE DIO WAKE SOURCE
+	vAHI_DioWakeEnable(u32PortInputMask, 0); // also use as DIO WAKE SOURCE
+	vAHI_DioWakeEdge(0, u32PortInputMask); // 割り込みエッジ（立下りに設定）
+	// vAHI_DioWakeEnable(0, u32PortInputMask); // DISABLE DIO WAKE SOURCE
 
 	// wake up using wakeup timer as well.
 	ToCoNet_vSleep(E_AHI_WAKE_TIMER_0, u32SleepDur_ms, bPeriodic, bDeep); // PERIODIC RAM OFF SLEEP USING WK0
