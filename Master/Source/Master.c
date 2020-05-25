@@ -3713,7 +3713,11 @@ static void vReceiveSerMsg(tsRxDataApp *pRx) {
 	uint8 u8len = G_OCTET();
 
 	/* 宛先によって処理するか決める */
-	if (IS_LOGICAL_ID_CHILD(sAppData.u8AppLogicalId)) {
+	if (IS_LOGICAL_ID_REPEATER(sAppData.u8AppLogicalId)
+				|| (sAppData.u8Mode == E_IO_MODE_CHILD && IS_APPCONF_OPT_ROUTING_CHILD())) {
+			// リピータ機は一旦受け取る。
+			;
+	} else if (IS_LOGICAL_ID_CHILD(sAppData.u8AppLogicalId)) {
 		if (!(u8AppLogicalId_Dest == sAppData.u8AppLogicalId
 				|| u8AppLogicalId_Dest == LOGICAL_ID_CHILDREN)) {
 			return;
@@ -3723,9 +3727,6 @@ static void vReceiveSerMsg(tsRxDataApp *pRx) {
 				&& IS_LOGICAL_ID_CHILD(u8AppLogicalId))) {
 			return;
 		}
-	} else if (IS_LOGICAL_ID_REPEATER(sAppData.u8AppLogicalId)) {
-		// リピータ機は一旦受け取る。
-		;
 	} else {
 		return;
 	}
@@ -3828,7 +3829,7 @@ static void vReceiveSerMsg(tsRxDataApp *pRx) {
 				// 中継
 				if (sSerSeqRx.bRelayPacket < sAppData.u8max_hops) {
 					i16TransmitSerMsg(au8SerBuffRx, sSerSeqRx.u16DataLen,
-							u32Addr, u8AppLogicalId, au8SerBuffRx[0], sSerSeqRx.bRelayPacket,
+							u32Addr, u8AppLogicalId, au8SerBuffRx[0], sSerSeqRx.bRelayPacket + 1,
 							sSerSeqRx.u8ReqNum);
 				}
 			}
