@@ -110,6 +110,9 @@ uint8 ModBusAscii_u8Parse(tsModbusCmd *pCmd, uint8 u8byte) {
 			}
 
 			pCmd->u16pos++;
+		} else if (u8byte == 'X') { // チェックサム省略
+			pCmd->u8state = E_MODBUS_CMD_COMPLETE;
+			pCmd->u16len = pCmd->u16pos / 2;
 		} else if (u8byte == 0x0d) { // CR入力
 			pCmd->u8state = E_MODBUS_CMD_READLF;
 		} else {

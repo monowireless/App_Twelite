@@ -99,6 +99,12 @@ ifeq ($(TWE_DEVKIT),002L)
   TARGET_SUFF += _KIT002L
 endif
 
+ifeq ($(TWE_DEVKIT),TOCOSTICK)
+  CFLAGS += -DUSE_TOCOSTICK
+  OBJDIR_SUFF += _TOCOSTICK
+  TARGET_SUFF += _TOCOSTICK
+endif
+
 ### Additional Src/Include Path
 # 下記に指定したディレクトリがソース検索パス、インクルード検索パスに設定
 # されます。Makefile のあるディレクトリからの相対パスを指定します。

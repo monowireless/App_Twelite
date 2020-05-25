@@ -57,6 +57,24 @@
 #define PORT_CONF3 19
 
 #define PORT_BAUD 4
+#elif defined (USE_TOCOSTICK)
+// ToCoStick 用
+#warning "IO CONF IS FOR TOCOSTICK!"
+#define PORT_OUT1 16 // DIO16/18 をスワップ
+#define PORT_OUT2 19
+#define PORT_OUT3 4
+#define PORT_OUT4 9
+
+#define PORT_INPUT1 12
+#define PORT_INPUT2 13
+#define PORT_INPUT3 11
+#define PORT_INPUT4 18 // DIO16/18 をスワップ
+
+#define PORT_CONF1 10
+#define PORT_CONF2 2
+#define PORT_CONF3 3
+
+#define PORT_BAUD 17
 #else
 // TWE-Lite DIP (TWELITE の標準構成)
 #define PORT_OUT1 18

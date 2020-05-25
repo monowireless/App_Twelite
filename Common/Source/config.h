@@ -44,7 +44,13 @@ extern "C" {
 #define UART_PORT_MASTER    E_AHI_UART_0 //!< UARTポートの指定
 
 /* Specify the PAN ID and CHANNEL to be used by tags, readers and gateway */
-#define APP_ID              0x67720102 //!< アプリケーションID。同じIDでないと通信しない。
+#define APP_ID_ASSIGNED     0x67720102 //!< アプリケーションID。同じIDでないと通信しない。
+#define APP_ID              APP_ID_ASSIGNED //!< アプリケーションID。同じIDでないと通信しない。
+//#define APP_ID              0x67720202 //!< アプリケーションID。同じIDでないと通信しない。
+#if APP_ID != APP_ID_ASSIGNED
+# warning "Custom APP_ID used"
+#endif
+
 //#define CHANNEL             17
 //#define CHMASK              ((1UL << 11) | (1UL << 17) | (1UL << 25))
 #define CHANNEL 18 //!< 使用するチャネル
@@ -86,7 +92,7 @@ extern "C" {
  * - DI=G 検知時に連続送信し、DI=H になった後も１秒間(ON_PRESS_TRANSMIT_KEEP_TX_ms)継続送信する。
  * - 受信側は、500ms(ON_PRESS_TRANSMIT_RESET_ms) 無線電波を受信しなかった場合、DO=H に戻す
  */
-#undef ON_PRESS_TRANSMIT
+#define ON_PRESS_TRANSMIT
 
 /**
  * ボタン押し下げ時連続送信モード時の、無受信時に DO=H に戻すまでの時間[ms]
@@ -107,16 +113,23 @@ extern "C" {
  * 評価キット 002_L 使用時
  */
 #ifdef USE_DEV_KIT_002_L
-# warning "USE_DEV_KIT_002_L is defined... Undef this for official release."
+# warning "USE_DEV_KIT_002_L is defined... Special Build."
 #endif
 
-/*
- * LCDモジュールの対応(実験的な実装)
+/**
+ * ToCoStick 用
+ *   - デフォルトで親機になる
+ *   - オプションビット 0x00000020 を設定する
  */
-#define USE_I2C_ACM1620
-#define USE_I2C_AQM0802A
+#ifdef USE_TOCOSTICK
+# warning "USE_TOCOSTICK is defined... Special Build."
+#endif
 
-#undef USE_I2C_LCD_TEST_CODE
+/**
+ * LCDモジュールの対応
+ */
+#define USE_I2C_ACM1620 //!< ACM1620 をサポートする
+#define USE_I2C_AQM0802A //!< AQM0802A をサポートする
 
 /****************************************************************************/
 /***        Type Definitions                                              ***/

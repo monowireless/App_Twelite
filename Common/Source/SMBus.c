@@ -70,7 +70,7 @@
 /***        Local Function Prototypes                                     ***/
 /****************************************************************************/
 
-PRIVATE bool_t bSMBusWait(void);
+static bool_t bSMBusWait(void);
 
 /****************************************************************************/
 /***        Exported Variables                                            ***/
@@ -84,7 +84,7 @@ PRIVATE bool_t bSMBusWait(void);
 /***        Exported Functions                                            ***/
 /****************************************************************************/
 
-PUBLIC void vSMBusInit(void)
+void vSMBusInit(void)
 {
 
 	/* run bus at 100KHz */
@@ -95,7 +95,7 @@ PUBLIC void vSMBusInit(void)
 }
 
 
-PUBLIC bool_t bSMBusWrite(uint8 u8Address, uint8 u8Command, uint8 u8Length, uint8* pu8Data)
+bool_t bSMBusWrite(uint8 u8Address, uint8 u8Command, uint8 u8Length, uint8* pu8Data)
 {
 
 	bool_t bCommandSent = FALSE;
