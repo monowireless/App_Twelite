@@ -1,98 +1,244 @@
 // .vscode/tasks.json
 {
     "version": "2.0.0",
+    // "windows": { "options": { "shell": { "executable": "bash.exe", "args": ["-c", "-l"] } } },
     "tasks": [
-	 {
-            "label": "Build App_Twelite,Master (BLUE)",
+        {
+            "label": "Clean for TWELITE",
             "type": "shell",
             "windows": {
-                "command": "make",
-                "args": [ "TWELITE=BLUE",  "clean", "all" ],
-                "options": { "env": { "PATH": "${workspaceRoot}\\..\\..\\Tools\\MinGW\\msys\\1.0\\bin" } }
+                "command": "sh",
+                "args": [
+                    "-c", "rm -rfv objs_*"
+                ],
+                "options": {
+                    "env": {
+                        "PATH": "..\\..\\..\\..\\Tools\\MinGW\\msys\\1.0\\bin"
+                    }
+                }
             },
             "linux": {
                 "command": "sh",
                 "args": [
-                    "${workspaceRoot}/../../Tools/VSCode/bin/cleanbuild.sh",
-                    "TWELITE=BLUE",  "" ]
+                    "-l", "-c", "rm -rfv objs_*"
+                ]
             },
             "osx": {
                 "command": "sh",
                 "args": [
-                    "${workspaceRoot}/../../Tools/VSCode/bin/cleanbuild.sh",
-                    "TWELITE=BLUE",  "" ]
+                    "-l", "-c", "rm -rfv objs_*"
+                ]
             },
-            "problemMatcher": { "base": "$gcc", "fileLocation": [ "absolute" ] },
-            "options": { "cwd": "${workspaceRoot}/Master/Build" }
-        }
-	, {
-            "label": "Build App_Twelite,Master (BLUE,MONOSTICK)",
+            "problemMatcher": {
+                "base": "$gcc",
+                "fileLocation": [
+                    "absolute"
+                ]
+            },
+            "options": {
+                "cwd": "${workspaceRoot}/App_Twelite/build"
+            },
+            "group": "build"
+        },
+        {
+            "label": "Clean for MONOSTICK",
             "type": "shell",
             "windows": {
-                "command": "make",
-                "args": [ "TWELITE=BLUE", "TWE_DEVKIT=MONOSTICK",  "clean", "all" ],
-                "options": { "env": { "PATH": "${workspaceRoot}\\..\\..\\Tools\\MinGW\\msys\\1.0\\bin" } }
+                "command": "sh",
+                "args": [
+                    "-c", "rm -rfv objs_*"
+                ],
+                "options": {
+                    "env": {
+                        "PATH": "..\\..\\..\\..\\Tools\\MinGW\\msys\\1.0\\bin"
+                    }
+                }
             },
             "linux": {
                 "command": "sh",
                 "args": [
-                    "${workspaceRoot}/../../Tools/VSCode/bin/cleanbuild.sh",
-                    "TWELITE=BLUE", "TWE_DEVKIT=MONOSTICK",  "" ]
+                    "-l", "-c", "rm -rfv objs_*"
+                ]
             },
             "osx": {
                 "command": "sh",
                 "args": [
-                    "${workspaceRoot}/../../Tools/VSCode/bin/cleanbuild.sh",
-                    "TWELITE=BLUE", "TWE_DEVKIT=MONOSTICK",  "" ]
+                    "-l", "-c", "rm -rfv objs_*"
+                ]
             },
-            "problemMatcher": { "base": "$gcc", "fileLocation": [ "absolute" ] },
-            "options": { "cwd": "${workspaceRoot}/Master/Build" }
-        }
-	, {
-            "label": "Build App_Twelite,Master (RED)",
+            "problemMatcher": {
+                "base": "$gcc",
+                "fileLocation": [
+                    "absolute"
+                ]
+            },
+            "options": {
+                "cwd": "${workspaceRoot}/App_Twelite_MONOSTICK/build"
+            },
+            "group": "build"
+        },
+        {
+            "label": "Build for TWELITE BLUE",
             "type": "shell",
             "windows": {
-                "command": "make",
-                "args": [ "TWELITE=RED",  "clean", "all" ],
-                "options": { "env": { "PATH": "${workspaceRoot}\\..\\..\\Tools\\MinGW\\msys\\1.0\\bin" } }
+                "command": "sh",
+                "args": [
+                    "-c", "make TWELITE=BLUE 2>&1 | sed -E -e s#\\(/mnt\\)?/\\([a-zA-Z]\\)/#\\\\\\2:/#g"
+                ],
+                "options": {
+                    "env": {
+                        "PATH": "..\\..\\..\\..\\Tools\\MinGW\\msys\\1.0\\bin"
+                    }
+                }
             },
             "linux": {
                 "command": "sh",
                 "args": [
-                    "${workspaceRoot}/../../Tools/VSCode/bin/cleanbuild.sh",
-                    "TWELITE=RED",  "" ]
+                    "-l", "-c", "make",
+                    "TWELITE=BLUE",
+                    ""
+                ]
             },
             "osx": {
                 "command": "sh",
                 "args": [
-                    "${workspaceRoot}/../../Tools/VSCode/bin/cleanbuild.sh",
-                    "TWELITE=RED",  "" ]
+                    "-l", "-c", "make",
+                    "TWELITE=BLUE",
+                    ""
+                ]
             },
-            "problemMatcher": { "base": "$gcc", "fileLocation": [ "absolute" ] },
-            "options": { "cwd": "${workspaceRoot}/Master/Build" }
-        }
-	, {
-            "label": "Build App_Twelite,Master (RED,MONOSTICK)",
+            "problemMatcher": {
+                "base": "$gcc",
+                "fileLocation": [
+                    "absolute"
+                ]
+            },
+            "options": {
+                "cwd": "${workspaceRoot}/App_Twelite/build"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Build for TWELITE RED",
             "type": "shell",
             "windows": {
+                "command": "sh",
+                "args": [
+                    "-c", "make TWELITE=RED 2>&1 | sed -E -e s#\\(/mnt\\)?/\\([a-zA-Z]\\)/#\\\\\\2:/#g"
+                ],
+                "options": {
+                    "env": {
+                        "PATH": "..\\..\\..\\..\\Tools\\MinGW\\msys\\1.0\\bin"
+                    }
+                }
+            },
+            "linux": {
                 "command": "make",
-                "args": [ "TWELITE=RED", "TWE_DEVKIT=MONOSTICK",  "clean", "all" ],
-                "options": { "env": { "PATH": "${workspaceRoot}\\..\\..\\Tools\\MinGW\\msys\\1.0\\bin" } }
+                "args": [
+                    "-l", "-c", "TWELITE=RED",
+                    ""
+                ]
+            },
+            "osx": {
+                "command": "make",
+                "args": [
+                    "-l", "-c", "TWELITE=RED",
+                    ""
+                ]
+            },
+            "problemMatcher": {
+                "base": "$gcc",
+                "fileLocation": [
+                    "absolute"
+                ]
+            },
+            "options": {
+                "cwd": "${workspaceRoot}/App_Twelite/build"
+            },
+            "group": "build"
+        },
+        {
+            "label": "Build for MONOSTICK BLUE",
+            "type": "shell",
+            "windows": {
+                "command": "sh",
+                "args": [
+                    "-c", "make TWELITE=BLUE 2>&1 | sed -E -e s#\\(/mnt\\)?/\\([a-zA-Z]\\)/#\\\\\\2:/#g"
+                ],
+                "options": {
+                    "env": {
+                        "PATH": "..\\..\\..\\..\\Tools\\MinGW\\msys\\1.0\\bin"
+                    }
+                }
             },
             "linux": {
                 "command": "sh",
                 "args": [
-                    "${workspaceRoot}/../../Tools/VSCode/bin/cleanbuild.sh",
-                    "TWELITE=RED", "TWE_DEVKIT=MONOSTICK",  "" ]
+                    "-l", "-c", "make",
+                    "TWELITE=BLUE",
+                    ""
+                ]
             },
             "osx": {
                 "command": "sh",
                 "args": [
-                    "${workspaceRoot}/../../Tools/VSCode/bin/cleanbuild.sh",
-                    "TWELITE=RED", "TWE_DEVKIT=MONOSTICK",  "" ]
+                    "-l", "-c", "make",
+                    "TWELITE=BLUE",
+                    ""
+                ]
             },
-            "problemMatcher": { "base": "$gcc", "fileLocation": [ "absolute" ] },
-            "options": { "cwd": "${workspaceRoot}/Master/Build" }
+            "problemMatcher": {
+                "base": "$gcc",
+                "fileLocation": [
+                    "absolute"
+                ]
+            },
+            "options": {
+                "cwd": "${workspaceRoot}/App_Twelite_MONOSTICK/build"
+            },
+            "group": "build"
+        },
+        {
+            "label": "Build for MONOSTICK RED",
+            "type": "shell",
+            "windows": {
+                "command": "sh",
+                "args": [
+                    "-c", "make TWELITE=RED 2>&1 | sed -E -e s#\\(/mnt\\)?/\\([a-zA-Z]\\)/#\\\\\\2:/#g"
+                ],
+                "options": {
+                    "env": {
+                        "PATH": "..\\..\\..\\..\\Tools\\MinGW\\msys\\1.0\\bin"
+                    }
+                }
+            },
+            "linux": {
+                "command": "make",
+                "args": [
+                    "-l", "-c", "TWELITE=RED",
+                    ""
+                ]
+            },
+            "osx": {
+                "command": "make",
+                "args": [
+                    "-l", "-c", "TWELITE=RED",
+                    ""
+                ]
+            },
+            "problemMatcher": {
+                "base": "$gcc",
+                "fileLocation": [
+                    "absolute"
+                ]
+            },
+            "options": {
+                "cwd": "${workspaceRoot}/App_Twelite_MONOSTICK/build"
+            },
+            "group": "build"
         }
     ]
 }

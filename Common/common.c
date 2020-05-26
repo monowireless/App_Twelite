@@ -13,7 +13,6 @@
 #include "modbus_ascii.h"
 
 #include "common.h"
-#include "Version.h"
 
 /** @ingroup MASTER
  * DI のポート番号のテーブル

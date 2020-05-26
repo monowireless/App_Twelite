@@ -8,12 +8,10 @@
 #include <string.h>
 #include <AppHardwareApi.h>
 
-#include "Master.h"
+#include "App_Twelite.h"
 
 #include "ccitt8.h"
 #include "Interrupt.h"
-
-#include "Version.h"
 
 #include "utils.h"
 #include "flash.h"

@@ -14,7 +14,6 @@
 #include "config.h"
 #include "common.h"
 
-#include "Version.h"
 /*
  * Version 番号
  */
