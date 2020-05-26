@@ -120,16 +120,20 @@ uint8 ModBusAscii_u8Parse(tsModbusCmd *pCmd, uint8 u8byte) {
 		}
 		break;
 	case E_MODBUS_CMD_READLF:
-		if (u8byte == 0x0a) {
-			// エラーチェック
+		if (u8byte == 0x0a // LF入力
+				&& pCmd->u16pos >= 4 && ((pCmd->u16pos & 1) == 0) // 最低１バイトのデータ部と LRC の２バイト文のデータが最低あること
+			) {
+			// LRCが正しければ、全部足したら 0 になる。
 			if (pCmd->u8lrc) {
-				// 格納値
-				uint8 u8lrc = pCmd->au8data[pCmd->u16pos / 2 - 1]; // u16posは最後のデータの次の位置
+				// LRCが合わない。
+
+				// pCmd->u8lrc は「入力のLRC部」まで足し算した結果なので、「入力のLRC部」を引けばデータ部が正しいと仮定した LRC 値を計算できる
+				uint8 u8lrc = pCmd->u8lrc - pCmd->au8data[pCmd->u16pos / 2 - 1]; // u16posは最後のデータの次の位置
 				// 計算値(二の補数の計算、ビット反転+1), デバッグ用に入力系列に対応する正しいLRCを格納しておく
-				pCmd->u8lrc = ~(pCmd->u8lrc - u8lrc) + 1;
+				pCmd->u8lrc = ~u8lrc + 1;
+
 				pCmd->u8state = E_MODBUS_CMD_LRCERROR;
 			} else {
-				// LRCが正しければ、全部足したら 0 になる。
 				pCmd->u8state = E_MODBUS_CMD_COMPLETE; // 完了！
 				pCmd->u16len = pCmd->u16pos / 2 - 1;
 			}

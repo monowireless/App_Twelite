@@ -77,6 +77,7 @@
 #define TX_NODELAY 2
 #define TX_NODELAY_AND_RESP_BIT 3
 #define TX_SMALLDELAY 4
+#define TX_REPONDING 5
 
 /****************************************************************************/
 /***        Type Definitions                                              ***/
@@ -108,7 +109,7 @@ static void vReceiveIoSettingRequest(tsRxDataApp *pRx);
 static bool_t bCheckDupPacket(tsDupChk_Context *pc, uint32 u32Addr,
 		uint16 u16TimeStamp);
 
-static int16 i16TransmitIoData(bool_t bQuick, bool_t bRegular);
+static int16 i16TransmitIoData(uint8 u8Quick, bool_t bRegular);
 static int16 i16TransmitIoSettingRequest(uint8 u8DstAddr, tsIOSetReq *pReq);
 static int16 i16TransmitRepeat(tsRxDataApp *pRx);
 static int16 i16TransmitSerMsg(uint8 *p, uint16 u16len, uint32 u32AddrSrc,
@@ -737,7 +738,7 @@ void cbAppColdStart(bool_t bStart) {
 #endif
 
 		// デフォルトのネットワーク指定値
-		sToCoNet_AppContext.u8TxMacRetry = 3; // MAC再送回数（JN516x では変更できない）
+		sToCoNet_AppContext.u8TxMacRetry = 3; // MAC再送回数
 		sToCoNet_AppContext.u32AppId = APP_ID; // アプリケーションID
 		sToCoNet_AppContext.u32ChMask = CHMASK; // 利用するチャネル群（最大３つまで）
 		sToCoNet_AppContext.u8Channel = CHANNEL; // デフォルトのチャネル
@@ -758,7 +759,6 @@ void cbAppColdStart(bool_t bStart) {
 			sToCoNet_AppContext.u32AppId = sAppData.sFlash.sData.u32appid;
 			// sToCoNet_AppContext.u8Channel = sAppData.sFlash.sData.u8ch; // チャネルマネージャで決定するので設定不要
 			sToCoNet_AppContext.u32ChMask = sAppData.sFlash.sData.u32chmask;
-			sToCoNet_AppContext.u8TxPower = sAppData.sFlash.sData.u8pow; // 出力の設定
 
 			if (sAppData.sFlash.sData.u8role == E_APPCONF_ROLE_MAC_NODE) {
 				sAppData.eNwkMode = E_NWKMODE_MAC_DIRECT;
@@ -778,6 +778,18 @@ void cbAppColdStart(bool_t bStart) {
 			// 構造体にデフォルト値を格納する
 			vConfig_SetDefaults(&(sAppData.sFlash.sData));
 		}
+
+		// 出力の設定
+		sToCoNet_AppContext.u8TxPower = sAppData.sFlash.sData.u8pow & 0x0F;
+
+		// 標準再送回数の計算
+		uint8 u8retry = (sAppData.sFlash.sData.u8pow & 0xF0) >> 4;
+		switch (u8retry) {
+			case   0: sAppData.u8StandardTxRetry = 0x82; break;
+			case 0xF: sAppData.u8StandardTxRetry = 0; break;
+			default:  sAppData.u8StandardTxRetry = 0x80 + u8retry; break;
+		}
+
 		// ヘッダの１バイト識別子を AppID から計算
 		sAppData.u8AppIdentifier = u8CCITT8(
 				(uint8*) &sToCoNet_AppContext.u32AppId, 4); // APP ID の CRC8
@@ -993,6 +1005,8 @@ void cbAppColdStart(bool_t bStart) {
  * @param bStart TRUE:u32AHI_Init() 前の呼び出し FALSE: 後
  */
 void cbAppWarmStart(bool_t bStart) {
+	int i;
+
 	if (!bStart) {
 		// before AHI init, very first of code.
 		//  to check interrupt source, etc.
@@ -1026,6 +1040,12 @@ void cbAppWarmStart(bool_t bStart) {
 
 		// いくつかのデータは復元
 		sAppData.sIOData_now.u32BtmUsed = sAppData.sIOData_reserve.u32BtmUsed;
+		sAppData.sIOData_now.u32BtmChanged = sAppData.sIOData_reserve.u32BtmChanged;
+		sAppData.sIOData_now.u32BtmBitmap = sAppData.sIOData_reserve.u32BtmBitmap;
+		for (i = 0; i < 4; i++) {
+			sAppData.sIOData_now.au8Output[i] = sAppData.sIOData_reserve.au8Output[i];
+		}
+
 		memcpy(sAppData.sIOData_now.au16InputADC_LastTx,
 				sAppData.sIOData_reserve.au16InputADC_LastTx,
 				sizeof(sAppData.sIOData_now.au16InputADC_LastTx));
@@ -1659,12 +1679,12 @@ static void vInitHardware(int f_warm_start) {
 			}
 
 			// 出力設定
-			vPortAsOutput(au8PortTbl_DOut[i]);
 			if (sAppData.sIOData_reserve.au8Output[i] != 0xFF) {
 				vDoSet_TrueAsLo(au8PortTbl_DOut[i], sAppData.sIOData_reserve.au8Output[i]);
 			} else {
 				vDoSetHi(au8PortTbl_DOut[i]);
 			}
+			vPortAsOutput(au8PortTbl_DOut[i]);
 		}
 	}
 
@@ -1803,19 +1823,19 @@ static void vInitHardware(int f_warm_start) {
 
 
 	// PWM
-	uint16 u16PWM_Hz = sAppData.sFlash.sData.u32PWM_Hz; // PWM周波数
-	uint8 u8PWM_prescale = 0; // prescaleの設定
-	if (u16PWM_Hz < 10)
-		u8PWM_prescale = 9;
-	else if (u16PWM_Hz < 100)
-		u8PWM_prescale = 6;
-	else if (u16PWM_Hz < 1000)
-		u8PWM_prescale = 3;
-	else
-		u8PWM_prescale = 0;
-
 	uint16 u16pwm_duty_default = IS_APPCONF_OPT_PWM_INIT_LOW() ? 0 : 1024; // 起動時のデフォルト
 	for (i = 0; i < 4; i++) {
+		uint16 u16PWM_Hz = sAppData.sFlash.sData.u32PWM_Hz[i]; // PWM周波数
+		uint8 u8PWM_prescale = 0; // prescaleの設定
+		if (u16PWM_Hz < 10)
+			u8PWM_prescale = 9;
+		else if (u16PWM_Hz < 100)
+			u8PWM_prescale = 6;
+		else if (u16PWM_Hz < 1000)
+			u8PWM_prescale = 3;
+		else
+			u8PWM_prescale = 0;
+
 		sTimerPWM[i].u16Hz = u16PWM_Hz;
 		sTimerPWM[i].u8PreScale = u8PWM_prescale;
 		sTimerPWM[i].u16duty =
@@ -1996,7 +2016,7 @@ static void vSerUpdateScreen() {
 	}
 	V_PRINT(")%c" LB, FL_IS_MODIFIED_u32(chmask) ? '*' : ' ');
 
-	V_PRINT(" x: set Tx Power (%d)%c" LB,
+	V_PRINT(" x: set Tx Power (%02x)%c" LB,
 			FL_IS_MODIFIED_u8(pow) ? FL_UNSAVE_u8(pow) : FL_MASTER_u8(pow),
 			FL_IS_MODIFIED_u8(pow) ? '*' : ' ');
 
@@ -2012,9 +2032,19 @@ static void vSerUpdateScreen() {
 			FL_IS_MODIFIED_u8(Fps) ? FL_UNSAVE_u8(Fps) : FL_MASTER_u8(Fps),
 			FL_IS_MODIFIED_u8(Fps) ? '*' : ' ');
 
-	V_PRINT(" z: set PWM HZ (%d)%c" LB,
-			FL_IS_MODIFIED_u32(PWM_Hz) ? FL_UNSAVE_u32(PWM_Hz) : FL_MASTER_u32(PWM_Hz),
-			FL_IS_MODIFIED_u32(PWM_Hz) ? '*' : ' ');
+	{
+		int i;
+		bool_t bMod = FALSE;
+
+		V_PRINT(" z: set PWM HZ (");
+		for (i = 0; i < 4; i++) {
+			if (i) V_PUTCHAR(',');
+			V_PRINT("%d", FL_IS_MODIFIED_u32(PWM_Hz[i]) ? FL_UNSAVE_u32(PWM_Hz[i]) : FL_MASTER_u32(PWM_Hz[i]));
+
+			bMod |= FL_IS_MODIFIED_u32(PWM_Hz[i]) ? TRUE : FALSE;
+		}
+		V_PRINT(")%c" LB, bMod ? '*' : ' ');
+	}
 
 	V_PRINT(" o: set Option Bits (0x%08X)%c" LB,
 			FL_IS_MODIFIED_u32(Opt) ? FL_UNSAVE_u32(Opt) : FL_MASTER_u32(Opt),
@@ -2175,8 +2205,12 @@ static void vProcessInputByte(uint8 u8Byte) {
 		break;
 
 	case 'x': // 出力の変更
-		V_PRINT("Tx Power (0[min]-3[max]): ");
-		INPSTR_vStart(&sSerInpStr, E_INPUTSTRING_DATATYPE_DEC, 1,
+		V_PRINT("Rf Power/Retry"
+				LB "   YZ Y=Retry(0:default,F:0,1-9:count"
+				LB "      Z=Power(3:Max,2,1,0:Min)"
+				LB "Input: "
+		);
+		INPSTR_vStart(&sSerInpStr, E_INPUTSTRING_DATATYPE_HEX, 2,
 				E_APPCONF_TX_POWER);
 		break;
 
@@ -2200,7 +2234,7 @@ static void vProcessInputByte(uint8 u8Byte) {
 
 	case 'z': // PWMの駆動周波数の変更
 		V_PRINT("Input PWM Hz (DEC:1-64000): ");
-		INPSTR_vStart(&sSerInpStr, E_INPUTSTRING_DATATYPE_DEC, 6,
+		INPSTR_vStart(&sSerInpStr, E_INPUTSTRING_DATATYPE_STRING, 30,
 				E_APPCONF_PWM_HZ);
 		break;
 
@@ -2422,11 +2456,11 @@ static void vProcessInputString(tsInpStr_Context *pContext) {
 
 	case E_APPCONF_TX_POWER:
 		_C {
-			uint32 u32val = u32string2dec(pu8str, u8idx);
+			uint32 u32val = u32string2hex(pu8str, u8idx);
 			V_PRINT(LB"-> ");
-			if (u32val <= 3) {
+			if ((u32val & 0xF) <= 3) {
 				sAppData.sConfig_UnSaved.u8pow = u32val;
-				V_PRINT("%d"LB, u32val);
+				V_PRINT("%02x"LB, u32val);
 			} else {
 				V_PRINT("(ignored)"LB);
 			}
@@ -2476,15 +2510,43 @@ static void vProcessInputString(tsInpStr_Context *pContext) {
 
 	case E_APPCONF_PWM_HZ:
 		_C {
-			uint32 u32val = u32string2dec(pu8str, u8idx);
-
 			V_PRINT(LB"-> ");
 
-			if (u32val > 0 && u32val < 0xFFFF) { // Timer API の限界は 16bit なので。
-				sAppData.sConfig_UnSaved.u32PWM_Hz = u32val;
-				V_PRINT("%d"LB, u32val);
+			int i;
+			#define NUM_LINE_SEP 4
+			uint8 *p_tokens[NUM_LINE_SEP];
+			uint8 u8n_tokens = u8StrSplitTokens(pu8str, p_tokens, NUM_LINE_SEP);
+
+			if (u8n_tokens <= 1) {
+				uint32 u32val = u32string2dec(pu8str, u8idx);
+
+				if (u32val > 0 && u32val < 0xFFFF) {
+					for (i = 0; i < 4; i++) {
+						sAppData.sConfig_UnSaved.u32PWM_Hz[i] = u32val;
+					}
+					V_PRINT("%d for PWM1..4"LB, u32val);
+				} else {
+					V_PRINT("(ignored)"LB);
+				}
 			} else {
-				V_PRINT("(ignored)"LB);
+				for (i = 0; i < NUM_LINE_SEP && i < u8n_tokens; i++) {
+					uint8 l = strlen((const char *)p_tokens[i]);
+
+					if (i) {
+						V_PRINT(",");
+					}
+
+					if ((u8n_tokens >= i + 1) && l) {
+						uint32 u32val;
+
+						u32val = u32string2dec(p_tokens[i], l);
+						if (u32val > 0 && u32val < 0xFFFF) {
+							sAppData.sConfig_UnSaved.u32PWM_Hz[i] = u32val;
+							V_PRINT("%d", u32val);
+						}
+					}
+				}
+				V_PRINT(LB);
 			}
 		}
 		break;
@@ -3106,7 +3168,7 @@ static bool_t bCheckDupPacket(tsDupChk_Context *pc, uint32 u32Addr,
  *
  * @returns -1:ERROR, 0..255 CBID
  */
-static int16 i16TransmitIoData(bool_t bQuick, bool_t bRegular) {
+static int16 i16TransmitIoData(uint8 u8Quick, bool_t bRegular) {
 	if (IS_APPCONF_ROLE_SILENT_MODE())
 		return -1;
 
@@ -3125,7 +3187,7 @@ static int16 i16TransmitIoData(bool_t bQuick, bool_t bRegular) {
 	S_BE_DWORD(ToCoNet_u32GetSerial());  // シリアル番号
 	S_OCTET(IS_LOGICAL_ID_PARENT(sAppData.u8AppLogicalId) ? LOGICAL_ID_CHILDREN : LOGICAL_ID_PARENT); // 宛先
 
-	S_BE_WORD((sAppData.u32CtTimer0 & 0x7FFF) + (bQuick == TX_NODELAY_AND_QUICK_BIT ? 0x8000 : 0)); // タイムスタンプ
+	S_BE_WORD((sAppData.u32CtTimer0 & 0x7FFF) + (u8Quick == TX_NODELAY_AND_QUICK_BIT ? 0x8000 : 0)); // タイムスタンプ
 
 	// bQuick 転送する場合は MSB をセットし、優先パケットである処理を行う
 	S_OCTET(0); // 中継フラグ
@@ -3167,7 +3229,7 @@ static int16 i16TransmitIoData(bool_t bQuick, bool_t bRegular) {
 			c |= (sAppData.sIOData_now.u32BtmUsed & (1UL << au8PortTbl_DIn[i])) ? (1 << i) : 0;
 		}
 
-		if (bQuick == TX_NODELAY_AND_RESP_BIT) c |= 0x80;
+		if (u8Quick == TX_NODELAY_AND_RESP_BIT) c |= 0x80;
 
 		S_OCTET(c);
 	}
@@ -3193,7 +3255,7 @@ static int16 i16TransmitIoData(bool_t bQuick, bool_t bRegular) {
 
 	// 送信する
 	sTx.u32DstAddr = TOCONET_MAC_ADDR_BROADCAST; // ブロードキャスト
-	sTx.u8Retry = 0x81; // 1回再送
+	sTx.u8Retry = sAppData.u8StandardTxRetry; // 再送
 
 	// フレームカウントとコールバック識別子の指定
 	sAppData.u16TxFrame++;
@@ -3206,7 +3268,7 @@ static int16 i16TransmitIoData(bool_t bQuick, bool_t bRegular) {
 		sTx.u32SrcAddr = sToCoNet_AppContext.u16ShortAddress;
 
 		// 送信タイミングの調整
-		switch (bQuick) {
+		switch (u8Quick) {
 		case TX_NODELAY:
 		case TX_NODELAY_AND_QUICK_BIT:
 		case TX_NODELAY_AND_RESP_BIT:
@@ -3215,6 +3277,7 @@ static int16 i16TransmitIoData(bool_t bQuick, bool_t bRegular) {
 			sTx.u16DelayMax = 0; // すみやかに送信する
 			break;
 		case TX_SMALLDELAY:
+		case TX_REPONDING:
 			sTx.u16RetryDur = 0; // 再送間隔
 			sTx.u16DelayMin = 4; // 衝突を抑制するため送信タイミングを遅らせる
 			sTx.u16DelayMax = 8; // 衝突を抑制するため送信タイミングを遅らせる
@@ -3228,8 +3291,8 @@ static int16 i16TransmitIoData(bool_t bQuick, bool_t bRegular) {
 
 #ifdef USE_SLOW_TX
 	    //ここから
-	    if (bQuick == 0x10) {
-	      sTx.u8Retry = 0x83; // 再送回数を３回とする
+	    if (u8Quick == 0x10) {
+	      sTx.u8Retry = sAppData.u8StandardTxRetry; // 再送回数を３回とする
 	      sTx.u16DelayMax = 100; // 初回送信は送信要求発行時～100ms の間（ランダムで決まる）
 	      sTx.u16RetryDur = 20; // 20ms おきに再送する
 	    }
@@ -3278,7 +3341,7 @@ int16 i16TransmitRepeat(tsRxDataApp *pRx) {
 
 	// 送信する
 	sTx.u32DstAddr = TOCONET_MAC_ADDR_BROADCAST; // ブロードキャスト
-	sTx.u8Retry = 0x81; // ２回再送
+	sTx.u8Retry = sAppData.u8StandardTxRetry; // ２回再送
 
 	// フレームカウントとコールバック識別子の指定
 	sAppData.u16TxFrame++;
@@ -3359,7 +3422,7 @@ int16 i16TransmitIoSettingRequest(uint8 u8DstAddr, tsIOSetReq *pReq) {
 
 	// 送信する
 	sTx.u32DstAddr = TOCONET_MAC_ADDR_BROADCAST; // ブロードキャスト
-	sTx.u8Retry = 0x81; // 1回再送
+	sTx.u8Retry = sAppData.u8StandardTxRetry; // 1回再送
 
 	{
 		/* 送信設定 */
@@ -3431,7 +3494,7 @@ static int16 i16TransmitSerMsg(uint8 *p, uint16 u16len, uint32 u32AddrSrc,
 			u32TickCount_ms & 65535);
 
 	sTx.u8Cmd = TOCONET_PACKET_CMD_APP_DATA; // data packet.
-	sTx.u8Retry = 0x81;
+	sTx.u8Retry = sAppData.u8StandardTxRetry;
 	sTx.u16RetryDur = sSerSeqTx.u8PktNum * 10; // application retry
 
 	int i;
@@ -3470,7 +3533,7 @@ static int16 i16TransmitSerMsg(uint8 *p, uint16 u16len, uint32 u32AddrSrc,
 		if (sAppData.eNwkMode == E_NWKMODE_MAC_DIRECT) {
 			sTx.u32SrcAddr = sToCoNet_AppContext.u16ShortAddress;
 			sTx.bAckReq = FALSE;
-			sTx.u8Retry = 0x81; // ２回再送
+			sTx.u8Retry = sAppData.u8StandardTxRetry;
 
 			ToCoNet_bMacTxReq(&sTx);
 		}
@@ -3576,6 +3639,22 @@ static void vReceiveIoData(tsRxDataApp *pRx) {
 	bool_t bRegular = !!(u8ButtonState & 0x80); // 通常送信パケットであることを意味する
 	uint8 u8ButtonChanged = G_OCTET();
 	bool_t bRespReq = !!(u8ButtonChanged & 0x80); // 速やかな応答を要求する
+
+	if (sAppData.prPrsEv == vProcessEvCoreSlpRecv) {
+		// 間欠受信モードでは、無条件に全ポートを書き換える /////////////////////////////
+		//   以下の動作パターンを想定
+		//     子機が間欠受信で DO1=LO に設定
+		//     親機が電源OFF
+		//     その後、親機のDI1=HI に戻る
+		//     親機が電源ON
+		//   この場合、親機のボタン変更マスク DI1=未使用 と設定され、子機DO1 が HI に戻る
+		//   事が無いため。
+		//
+		//   通常モードでも同様の現象は発生するが、用途要件によってどちらが良いかは一意に
+		//   決められないため、そのままとする。
+
+		u8ButtonChanged = 0x0F;
+	}
 
 	// ポートの値を設定する（変更フラグのあるものだけ）
 	for (i = 0, j = 1; i < 4; i++, j <<= 1) {
@@ -3743,7 +3822,7 @@ static void vReceiveIoData(tsRxDataApp *pRx) {
 	/* 子機から速やかなデータ要求 */
 	if (IS_LOGICAL_ID_PARENT(sAppData.u8AppLogicalId) && bRespReq) {
 		//DBGOUT(0, LB"RESP PKT! (%d)", bRespReq);
-		i16TransmitIoData(TX_SMALLDELAY, FALSE);
+		i16TransmitIoData(TX_REPONDING, FALSE);
 	}
 }
 
@@ -4239,7 +4318,10 @@ static void vConfig_SetDefaults(tsFlashApp *p) {
 	p->u16SleepDur_s = (MODE7_SLEEP_DUR_ms / 1000);
 	p->u8Fps = 32;
 
-	p->u32PWM_Hz = 1000;
+	p->u32PWM_Hz[0] = 1000;
+	p->u32PWM_Hz[1] = 1000;
+	p->u32PWM_Hz[2] = 1000;
+	p->u32PWM_Hz[3] = 1000;
 
 	p->u32baud_safe = UART_BAUD_SAFE;
 	p->u8parity = 0; // none
@@ -4299,8 +4381,12 @@ static void vConfig_SaveAndReset() {
 	if (sAppData.sConfig_UnSaved.u8Fps != 0xFF) {
 		sFlash.sData.u8Fps = sAppData.sConfig_UnSaved.u8Fps;
 	}
-	if (sAppData.sConfig_UnSaved.u32PWM_Hz != 0xFFFFFFFF) {
-		sFlash.sData.u32PWM_Hz = sAppData.sConfig_UnSaved.u32PWM_Hz;
+	{ int i;
+		for (i = 0; i < 4; i++) {
+			if (sAppData.sConfig_UnSaved.u32PWM_Hz[i] != 0xFFFFFFFF) {
+				sFlash.sData.u32PWM_Hz[i] = sAppData.sConfig_UnSaved.u32PWM_Hz[i];
+			}
+		}
 	}
 	if (sAppData.sConfig_UnSaved.u32baud_safe != 0xFFFFFFFF) {
 		sFlash.sData.u32baud_safe = sAppData.sConfig_UnSaved.u32baud_safe;

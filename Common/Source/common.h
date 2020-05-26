@@ -213,4 +213,9 @@ void vModbOut_Config(tsFILE *pSer, tsFlashApp *pConfig);
 #define DBGOUT(lv, ...) //!< デバッグ出力
 #endif
 
+/*
+ * 文字列処理関数
+ */
+uint8 u8StrSplitTokens(uint8 *pstr, uint8 **auptr, uint8 u8max_entry);
+
 #endif /* COMMON_H_ */

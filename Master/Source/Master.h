@@ -122,6 +122,9 @@ typedef struct {
 	bool_t bWakeupByButton; //!< TRUE なら起床時に DI 割り込みにより起床した
 	uint32 u32SleepDur; //!< スリープ間隔 [ms]
 
+	// 再送の標準的な回数
+	uint8 u8StandardTxRetry;
+
 	// mode3 fps
 	uint8 u8FpsBitMask; //!< mode=3 連続送信時の秒間送信タイミングを判定するためのビットマスク (64fps のカウンタと AND を取って判定)
 
