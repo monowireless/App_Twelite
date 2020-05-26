@@ -1,8 +1,10 @@
 VERSION_MAIN = 1
 VERSION_SUB  = 8
-VERSION_VAR  = 1
+VERSION_VAR  = 3
 VERSION_DESC = 
 
+#1.8.3 2018/4/19 TWELITE BLUEも新SDKに対応
+#1.8.2 2017/8/2 TWELITE REDに対応
 #1.8.1 2016/3/16 MoNoSTICK対応版
 #1.6.17 2015/7/13 PWM周波数を４つ独立で変更できるようにした
 #1.6.16 2015/6/26 インタラクティブモード x による再送設定の追加
