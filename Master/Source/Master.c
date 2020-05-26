@@ -1,18 +1,18 @@
 /****************************************************************************
- * (C) Tokyo Cosmos Electric, Inc. (TOCOS) - 2013 all rights reserved.
+ * (C) Mono Wireless Inc. - 2016 all rights reserved.
  *
  * Condition to use: (refer to detailed conditions in Japanese)
- *   - The full or part of source code is limited to use for TWE (TOCOS
+ *   - The full or part of source code is limited to use for TWE (The
  *     Wireless Engine) as compiled and flash programmed.
  *   - The full or part of source code is prohibited to distribute without
- *     permission from TOCOS.
+ *     permission from Mono Wireless.
  *
  * 利用条件:
- *   - 本ソースコードは、別途ソースコードライセンス記述が無い限り東京コスモス電機が著作権を
+ *   - 本ソースコードは、別途ソースコードライセンス記述が無い限りモノワイヤレスが著作権を
  *     保有しています。
  *   - 本ソースコードは、無保証・無サポートです。本ソースコードや生成物を用いたいかなる損害
- *     についても東京コスモス電機は保証致しません。不具合等の報告は歓迎いたします。
- *   - 本ソースコードは、東京コスモス電機が販売する TWE シリーズ上で実行する前提で公開
+ *     についてもモノワイヤレスは保証致しません。不具合等の報告は歓迎いたします。
+ *   - 本ソースコードは、モノワイヤレスが販売する TWE シリーズ上で実行する前提で公開
  *     しています。他のマイコン等への移植・流用は一部であっても出来ません。
  *
  ****************************************************************************/
@@ -78,6 +78,10 @@
 #define TX_NODELAY_AND_RESP_BIT 3
 #define TX_SMALLDELAY 4
 #define TX_REPONDING 5
+#ifdef USE_TOCOSTICK
+#define LED_FLASH_MS 500
+#define DEBUG_WD 0
+#endif
 
 /****************************************************************************/
 /***        Type Definitions                                              ***/
@@ -161,6 +165,11 @@ uint8 au8SerOutBuff[128]; //!< シリアルの出力書式のための暫定バ�
 
 tsDupChk_Context sDupChk_IoData; //!< 重複チェック(IO関連のデータ転送)  @ingroup MASTER
 tsDupChk_Context sDupChk_SerMsg; //!< 重複チェック(シリアル関連のデータ転送)  @ingroup MASTER
+
+#ifdef USE_TOCOSTICK
+bool_t bColdStart = TRUE; //!< MoNoStickの時の起動時にLEDを光らせるためのフラグ @ingroup MASTER
+bool_t bWDTest = TRUE;
+#endif
 
 /****************************************************************************/
 /***        FUNCTIONS                                                     ***/
@@ -844,7 +853,16 @@ void cbAppColdStart(bool_t bStart) {
 		vInitHardware(FALSE);
 
 #ifdef USE_TOCOSTICK
+		vPortSetLo(WD_ENABLE);		// 外部のウォッチドッグを有効にする。
+
+		vPortAsOutput(WD_ENABLE);	// パルス出力ピンを出力に設定する
+
 		// ToCoStick の場合はデフォルトで親機に設定する
+		bColdStart = TRUE;
+		vPortSetLo(PORT_OUT1);
+		sTimerPWM[2].u16duty = _PWM(0);
+		vTimerStart(&sTimerPWM[2]);
+
 		if (!sAppData.bFlashLoaded) {
 			sAppData.u8Mode = E_IO_MODE_PARNET; // 親機のIO設定に強制する
 		} else {
@@ -1118,10 +1136,16 @@ void cbToCoNet_vRxEvent(tsRxDataApp *psRx) {
 		break;
 	case TOCONET_PACKET_CMD_APP_USER_IO_DATA: // IO状態の伝送
 		if (PRSEV_eGetStateH(sAppData.u8Hnd_vProcessEvCore) == E_STATE_RUNNING) { // 稼動状態でパケット処理をする
+#ifdef USE_TOCOSTICK
+			//bColdStart = FALSE;
+#endif
 			vReceiveIoData(psRx);
 		}
 		break;
 	case TOCONET_PACKET_CMD_APP_USER_IO_DATA_EXT: // IO状態の伝送(UART経由)
+#ifdef USE_TOCOSTICK
+			//bColdStart = FALSE;
+#endif
 		if (PRSEV_eGetStateH(sAppData.u8Hnd_vProcessEvCore) == E_STATE_RUNNING) { // 稼動状態でパケット処理をする
 			vReceiveIoSettingRequest(psRx);
 		}
@@ -1328,6 +1352,20 @@ void cbToCoNet_vHwEvent(uint32 u32DeviceId, uint32 u32ItemBitmap) {
 
 						DBGOUT(5, "Port14,15 = %d" LB, u8PortRead);
 					}
+				}
+#endif
+
+#ifdef USE_TOCOSTICK
+				static bool_t bPulse = FALSE;
+				if( bWDTest){
+					vPortSet_TrueAsLo(WD_PULSE,  bPulse );
+					bPulse = !bPulse;
+				}
+				if( bColdStart && u32TickCount_ms >= LED_FLASH_MS ){
+					bColdStart = FALSE;
+					vPortSetHi(PORT_OUT1);
+					sTimerPWM[2].u16duty = _PWM(1024);
+					vTimerStart(&sTimerPWM[2]);
 				}
 #endif
 
@@ -1690,12 +1728,23 @@ static void vInitHardware(int f_warm_start) {
 
 	// 入力の設定
 	for (i = 0; i < 4; i++) {
+#ifdef USE_TOCOSTICK
+		// オプションビットによるプルアップの停止
+		if( i != 2 ){		// DI3は入力にしない
+			if (IS_APPCONF_OPT_NO_PULLUP_FOR_INPUT()) {
+				vPortDisablePullup(au8PortTbl_DIn[i]);
+			}
+
+			vPortAsInput(au8PortTbl_DIn[i]);
+		}
+#else
 		// オプションビットによるプルアップの停止
 		if (IS_APPCONF_OPT_NO_PULLUP_FOR_INPUT()) {
 			vPortDisablePullup(au8PortTbl_DIn[i]);
 		}
 
 		vPortAsInput(au8PortTbl_DIn[i]);
+#endif
 	}
 
 	// v1.3 低レイテンシで入力を行う処理
@@ -1941,7 +1990,7 @@ void vSerialInit(uint32 u32Baud, tsUartOpt *pUartOpt) {
  */
 static void vSerInitMessage() {
 	vfPrintf(&sSerStream,
-			LB"!INF TOCOS TWELITE DIP APP V%d-%02d-%d, SID=0x%08X, LID=0x%02x"LB,
+			LB"!INF MONO WIRELESS TWELITE DIP APP V%d-%02d-%d, SID=0x%08X, LID=0x%02x"LB,
 			VERSION_MAIN, VERSION_SUB, VERSION_VAR, ToCoNet_u32GetSerial(),
 			sAppData.u8AppLogicalId);
 	if (sAppData.bFlashLoaded == 0) {
@@ -1968,7 +2017,7 @@ static void vSerInitMessage() {
 static void vSerUpdateScreen() {
 	V_PRINT("%c[2J%c[H", 27, 27); // CLEAR SCREEN
 	V_PRINT(
-			"--- CONFIG/TOCOS TWELITE DIP APP V%d-%02d-%d/SID=0x%08x/LID=0x%02x ---"LB,
+			"--- CONFIG/MONO WIRELESS TWELITE DIP APP V%d-%02d-%d/SID=0x%08x/LID=0x%02x ---"LB,
 			VERSION_MAIN, VERSION_SUB, VERSION_VAR, ToCoNet_u32GetSerial(),
 			sAppData.u8AppLogicalId);
 
@@ -2334,6 +2383,13 @@ static void vProcessInputByte(uint8 u8Byte) {
 				sAppData.u32CtTimer0 & 0x3F);
 		V_PRINT(""LB);
 		break;
+
+#if DEBUG_WD
+	case 'Z':
+		V_PRINT("DISABLE OUTPUT PULSE"LB);
+		bWDTest = FALSE;
+		break;
+#endif
 
 #ifdef USE_I2C_LCD_TEST_CODE
 		case '1':
@@ -3208,12 +3264,23 @@ static int16 i16TransmitIoData(uint8 u8Quick, bool_t bRegular) {
 
 		for (i = 0; i < 4; i++) {
 			uint8 u8ct = sAppData.sIOData_now.au8Input[i] >> 4;
-
+#ifdef USE_TOCOSTICK
+			if(i != 2){
+				if (u8ct >= LOW_LATENCY_DELAYED_TRANSMIT_COUNTER - 3) { // カウンタ値が残っている場合は 1 を送る
+					u8bm |= (1 << i);
+				} else {
+					u8bm |= (sAppData.sIOData_now.au8Input[i] & 1) ? (1 << i) : 0;
+				}
+			}else{
+				u8bm = 0;
+			}
+#else
 			if (u8ct >= LOW_LATENCY_DELAYED_TRANSMIT_COUNTER - 3) { // カウンタ値が残っている場合は 1 を送る
 				u8bm |= (1 << i);
 			} else {
 				u8bm |= (sAppData.sIOData_now.au8Input[i] & 1) ? (1 << i) : 0;
 			}
+#endif
 		}
 
 		if (bRegular) u8bm |= 0x80; // MSB を設定(bRegularビット)
@@ -3225,9 +3292,17 @@ static int16 i16TransmitIoData(uint8 u8Quick, bool_t bRegular) {
 	{
 		uint8 i, c = 0x0;
 
+#ifdef USE_TOCOSTICK
+		for (i = 0; i < 4; i++) {
+			if( i != 2 ){
+				c |= (sAppData.sIOData_now.u32BtmUsed & (1UL << au8PortTbl_DIn[i])) ? (1 << i) : 0;
+			}
+		}
+#else
 		for (i = 0; i < 4; i++) {
 			c |= (sAppData.sIOData_now.u32BtmUsed & (1UL << au8PortTbl_DIn[i])) ? (1 << i) : 0;
 		}
+#endif
 
 		if (u8Quick == TX_NODELAY_AND_RESP_BIT) c |= 0x80;
 
