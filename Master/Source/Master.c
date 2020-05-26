@@ -1,21 +1,6 @@
-/****************************************************************************
- * (C) Mono Wireless Inc. - 2016 all rights reserved.
- *
- * Condition to use: (refer to detailed conditions in Japanese)
- *   - The full or part of source code is limited to use for TWE (The
- *     Wireless Engine) as compiled and flash programmed.
- *   - The full or part of source code is prohibited to distribute without
- *     permission from Mono Wireless.
- *
- * 利用条件:
- *   - 本ソースコードは、別途ソースコードライセンス記述が無い限りモノワイヤレスが著作権を
- *     保有しています。
- *   - 本ソースコードは、無保証・無サポートです。本ソースコードや生成物を用いたいかなる損害
- *     についてもモノワイヤレスは保証致しません。不具合等の報告は歓迎いたします。
- *   - 本ソースコードは、モノワイヤレスが販売する TWE シリーズ上で実行する前提で公開
- *     しています。他のマイコン等への移植・流用は一部であっても出来ません。
- *
- ****************************************************************************/
+/* Copyright (C) 2017 Mono Wireless Inc. All Rights Reserved.    *
+ * Released under MW-SLA-*J,*E (MONO WIRELESS SOFTWARE LICENSE   *
+ * AGREEMENT).                                                   */
 
 /****************************************************************************/
 /***        Include files                                                 ***/
@@ -78,7 +63,7 @@
 #define TX_NODELAY_AND_RESP_BIT 3
 #define TX_SMALLDELAY 4
 #define TX_REPONDING 5
-#ifdef USE_TOCOSTICK
+#ifdef USE_MONOSTICK
 #define LED_FLASH_MS 500
 #define DEBUG_WD 0
 #endif
@@ -166,7 +151,7 @@ uint8 au8SerOutBuff[128]; //!< シリアルの出力書式のための暫定バ�
 tsDupChk_Context sDupChk_IoData; //!< 重複チェック(IO関連のデータ転送)  @ingroup MASTER
 tsDupChk_Context sDupChk_SerMsg; //!< 重複チェック(シリアル関連のデータ転送)  @ingroup MASTER
 
-#ifdef USE_TOCOSTICK
+#ifdef USE_MONOSTICK
 bool_t bColdStart = TRUE; //!< MoNoStickの時の起動時にLEDを光らせるためのフラグ @ingroup MASTER
 bool_t bWDTest = TRUE;
 #endif
@@ -188,7 +173,6 @@ static void vProcessEvCore(tsEvent *pEv, teEvent eEvent, uint32 u32evarg) {
 	case E_STATE_IDLE:
 		if (eEvent == E_EVENT_START_UP) {
 #ifdef USE_BROWN_OUT_DETECT
-# ifdef JN516x
 			// BrownOut 検出の有効化
 			vAHI_BrownOutConfigure(
 					1,// 1:2.0V, 4:2.3V
@@ -200,7 +184,6 @@ static void vProcessEvCore(tsEvent *pEv, teEvent eEvent, uint32 u32evarg) {
 			//
 			vAHI_WatchdogStop();
 			vAHI_WatchdogStart(4);
-# endif
 #endif
 
 			if (IS_APPCONF_ROLE_SILENT_MODE()) {
@@ -852,7 +835,7 @@ void cbAppColdStart(bool_t bStart) {
 		// その他ハードウェアの初期化
 		vInitHardware(FALSE);
 
-#ifdef USE_TOCOSTICK
+#ifdef USE_MONOSTICK
 		vPortSetLo(WD_ENABLE);		// 外部のウォッチドッグを有効にする。
 
 		vPortAsOutput(WD_ENABLE);	// パルス出力ピンを出力に設定する
@@ -1136,14 +1119,14 @@ void cbToCoNet_vRxEvent(tsRxDataApp *psRx) {
 		break;
 	case TOCONET_PACKET_CMD_APP_USER_IO_DATA: // IO状態の伝送
 		if (PRSEV_eGetStateH(sAppData.u8Hnd_vProcessEvCore) == E_STATE_RUNNING) { // 稼動状態でパケット処理をする
-#ifdef USE_TOCOSTICK
+#ifdef USE_MONOSTICK
 			//bColdStart = FALSE;
 #endif
 			vReceiveIoData(psRx);
 		}
 		break;
 	case TOCONET_PACKET_CMD_APP_USER_IO_DATA_EXT: // IO状態の伝送(UART経由)
-#ifdef USE_TOCOSTICK
+#ifdef USE_MONOSTICK
 			//bColdStart = FALSE;
 #endif
 		if (PRSEV_eGetStateH(sAppData.u8Hnd_vProcessEvCore) == E_STATE_RUNNING) { // 稼動状態でパケット処理をする
@@ -1355,7 +1338,7 @@ void cbToCoNet_vHwEvent(uint32 u32DeviceId, uint32 u32ItemBitmap) {
 				}
 #endif
 
-#ifdef USE_TOCOSTICK
+#ifdef USE_MONOSTICK
 				static bool_t bPulse = FALSE;
 				if( bWDTest){
 					vPortSet_TrueAsLo(WD_PULSE,  bPulse );
@@ -1493,8 +1476,6 @@ void cbToCoNet_vHwEvent(uint32 u32DeviceId, uint32 u32ItemBitmap) {
 /** @ingroup MASTER
  * 割り込みハンドラ。ここでは長い処理は記述してはいけない。
  *
- * - TIMER_0\n
- *   - JN514x での DAC 出力
  * - TICK_TIMER\n
  *   - ADCの実行管理
  *   - ボタン入力判定管理
@@ -1597,33 +1578,15 @@ PUBLIC uint8 cbToCoNet_u8HwInt(uint32 u32DeviceId, uint32 u32ItemBitmap) {
 						}
 					}
 
-#if defined(JN514x)
-					sAppData.u8AdcState++;
-#else
 					sAppData.u8AdcState = 0x80; // 完了ステータス
-#endif
 				}
 				break;
 
 			case 2:
-#if defined(JN514x)
-				// DAC の出力を行う (周期的なリフレッシュ)
-				if (bAHI_APRegulatorEnabled()) {
-					vAHI_DacOutput(E_AHI_AP_DAC_1, sAppData.sIOData_now.au16OutputDAC_val[0]);
-				}
-#endif
-
 				sAppData.u8AdcState++;
 				break;
 
 			case 3:
-#if defined(JN514x)
-				// DAC の出力を行う (周期的なリフレッシュ)
-				if (bAHI_APRegulatorEnabled()) {
-					vAHI_DacOutput(E_AHI_AP_DAC_2, sAppData.sIOData_now.au16OutputDAC_val[1]);
-				}
-#endif
-
 				sAppData.u8AdcState = 0x80; // 完了ステータス
 				break;
 
@@ -1661,7 +1624,7 @@ PUBLIC uint8 cbToCoNet_u8HwInt(uint32 u32DeviceId, uint32 u32ItemBitmap) {
  * - ADC3/4 のプルアップ停止
  * - タイマー用の未使用ポートを汎用IOに解放する宣言
  * - 秒64回のTIMER0の初期化と稼働
- * - ADC/DAC(JN514x)/PWM の初期化
+ * - ADC/PWM の初期化
  * - I2Cの初期化
  *
  * @param f_warm_start TRUE:スリープ復帰時
@@ -1677,7 +1640,6 @@ static void vInitHardware(int f_warm_start) {
 	memset(&sTimerPWM[3], 0, sizeof(tsTimerContext));
 
 	// ポートテーブルの設定
-#ifdef JN516x
 	if (!IS_APPCONF_OPT_PWM_MOVE_PORTS()) {
 		vSetPortTblMap(0); // 主テーブルを選択
 		if (IS_APPCONF_OPT_NO_PULLUP_FOR_OUTPUT()) {
@@ -1695,11 +1657,6 @@ static void vInitHardware(int f_warm_start) {
 			vPortDisablePullup(17);
 		}
 	}
-
-#else
-	// JN514x ではポート入れ替えは意味が無いので無効
-	vSetPortTblMap(0);
-#endif
 
 	// 出力の設定
 #ifdef SET_DO_ON_SLEEP
@@ -1728,7 +1685,7 @@ static void vInitHardware(int f_warm_start) {
 
 	// 入力の設定
 	for (i = 0; i < 4; i++) {
-#ifdef USE_TOCOSTICK
+#ifdef USE_MONOSTICK
 		// オプションビットによるプルアップの停止
 		if( i != 2 ){		// DI3は入力にしない
 			if (IS_APPCONF_OPT_NO_PULLUP_FOR_INPUT()) {
@@ -1802,10 +1759,8 @@ static void vInitHardware(int f_warm_start) {
 	}
 
 	// ADC3/4 のピンのプルアップを廃止する
-#ifdef JN516x // v1.0.3
 	vPortDisablePullup(0);
 	vPortDisablePullup(1);
-#endif
 
 	// モード設定ピンで Lo になっているポートはプルアップ停止
 	// Lo でない場合は、プルアップ停止をするとリーク電流が発生する
@@ -1822,11 +1777,7 @@ static void vInitHardware(int f_warm_start) {
 	}
 
 	// タイマの未使用ポートの解放（汎用ＩＯとして使用するため）
-#ifdef JN516x
 	vAHI_TimerFineGrainDIOControl(0x7); // bit 0,1,2 をセット (TIMER0 の各ピンを解放する, PWM1..4 は使用する)
-#else
-	vAHI_TimerFineGrainDIOControl(0x1F); // PWM1, PWM2 のみ対応
-#endif
 
 	// 秒64回のTIMER0の初期化と稼働
 	sTimerApp.u8Device = E_AHI_DEVICE_TIMER0;
@@ -1864,13 +1815,6 @@ static void vInitHardware(int f_warm_start) {
 			| TEH_ADC_SRC_ADC_1 | TEH_ADC_SRC_ADC_2 | TEH_ADC_SRC_ADC_3
 			| TEH_ADC_SRC_ADC_4;
 
-	// DAC
-#if defined(JN514x)
-	vAHI_DacEnable(E_AHI_AP_DAC_1, E_AHI_AP_INPUT_RANGE_2, FALSE, 0);
-	vAHI_DacEnable(E_AHI_AP_DAC_2, E_AHI_AP_INPUT_RANGE_2, FALSE, 0);
-#endif
-
-
 	// PWM
 	uint16 u16pwm_duty_default = IS_APPCONF_OPT_PWM_INIT_LOW() ? 0 : 1024; // 起動時のデフォルト
 	for (i = 0; i < 4; i++) {
@@ -1894,15 +1838,6 @@ static void vInitHardware(int f_warm_start) {
 		sTimerPWM[i].bDisableInt = TRUE; // 割り込みを禁止する指定
 	}
 
-#if defined(JN514x)
-	// 0, 1 は使用せず DAC を使用する。
-	sTimerPWM[2].u8Device = E_AHI_DEVICE_TIMER1;
-	sTimerPWM[3].u8Device = E_AHI_DEVICE_TIMER2;
-	vTimerConfig(&sTimerPWM[2]);
-	vTimerStart(&sTimerPWM[2]);
-	vTimerConfig(&sTimerPWM[3]);
-	vTimerStart(&sTimerPWM[3]);
-#elif defined(JN516x)
 	if (!IS_APPCONF_OPT_PWM_MOVE_PORTS()) {
 		vAHI_TimerSetLocation(E_AHI_TIMER_1, TRUE, TRUE); // DIO5, DO1, DO2, DIO8
 	} else {
@@ -1918,7 +1853,6 @@ static void vInitHardware(int f_warm_start) {
 		vTimerConfig(&sTimerPWM[i]);
 		vTimerStart(&sTimerPWM[i]);
 	}
-#endif
 
 	// I2C
 #ifdef USE_I2C_PORT_AS_OTHER_FUNCTION
@@ -1990,17 +1924,13 @@ void vSerialInit(uint32 u32Baud, tsUartOpt *pUartOpt) {
  */
 static void vSerInitMessage() {
 	vfPrintf(&sSerStream,
-			LB"!INF MONO WIRELESS TWELITE DIP APP V%d-%02d-%d, SID=0x%08X, LID=0x%02x"LB,
+			LB"!INF MONO WIRELESS TWELITE APP V%d-%02d-%d, SID=0x%08X, LID=0x%02x"LB,
 			VERSION_MAIN, VERSION_SUB, VERSION_VAR, ToCoNet_u32GetSerial(),
 			sAppData.u8AppLogicalId);
 	if (sAppData.bFlashLoaded == 0) {
-		vfPrintf(&sSerStream, "!INF Default config (no save info)..." LB);
+		vfPrintf(&sSerStream, "!INF Default config (no save info). .." LB);
 	}
-#if defined(JN514x)
-	vfPrintf(&sSerStream, "!INF DIO --> %021b"LB, sAppData.u32DIO_startup);
-#elif defined(JN516x)
 	vfPrintf(&sSerStream, "!INF DIO --> %020b"LB, sAppData.u32DIO_startup);
-#endif
 	if (IS_APPCONF_ROLE_SILENT_MODE()) {
 		vfPrintf(&sSerStream, "!ERR SILENT MODE" LB);
 	}
@@ -2017,7 +1947,7 @@ static void vSerInitMessage() {
 static void vSerUpdateScreen() {
 	V_PRINT("%c[2J%c[H", 27, 27); // CLEAR SCREEN
 	V_PRINT(
-			"--- CONFIG/MONO WIRELESS TWELITE DIP APP V%d-%02d-%d/SID=0x%08x/LID=0x%02x ---"LB,
+			"--- CONFIG/MONO WIRELESS TWELITE APP V%d-%02d-%d/SID=0x%08x/LID=0x%02x ---"LB,
 			VERSION_MAIN, VERSION_SUB, VERSION_VAR, ToCoNet_u32GetSerial(),
 			sAppData.u8AppLogicalId);
 
@@ -2985,7 +2915,7 @@ static void vProcessI2CCommand(uint8 *p, uint16 u16len, uint8 u8AddrSrc) {
 #endif
 
 	default:
-		DBGOUT(1, "I2CCMD: unknown operation(%d)."LB, u8I2C_Oper);
+		DBGOUT(1, "I2CCMD: unknown operation(%d). "LB, u8I2C_Oper);
 		return;
 	}
 
@@ -3264,7 +3194,7 @@ static int16 i16TransmitIoData(uint8 u8Quick, bool_t bRegular) {
 
 		for (i = 0; i < 4; i++) {
 			uint8 u8ct = sAppData.sIOData_now.au8Input[i] >> 4;
-#ifdef USE_TOCOSTICK
+#ifdef USE_MONOSTICK
 			if(i != 2){
 				if (u8ct >= LOW_LATENCY_DELAYED_TRANSMIT_COUNTER - 3) { // カウンタ値が残っている場合は 1 を送る
 					u8bm |= (1 << i);
@@ -3292,7 +3222,7 @@ static int16 i16TransmitIoData(uint8 u8Quick, bool_t bRegular) {
 	{
 		uint8 i, c = 0x0;
 
-#ifdef USE_TOCOSTICK
+#ifdef USE_MONOSTICK
 		for (i = 0; i < 4; i++) {
 			if( i != 2 ){
 				c |= (sAppData.sIOData_now.u32BtmUsed & (1UL << au8PortTbl_DIn[i])) ? (1 << i) : 0;
@@ -3822,15 +3752,9 @@ static void vReceiveIoData(tsRxDataApp *pRx) {
 			if (sAppData.sIOData_now.au16OutputPWMDuty[i] != 0xFFFF) {
 				sTimerPWM[i].u16duty =
 						_PWM(sAppData.sIOData_now.au16OutputPWMDuty[i]);
-#if defined(JN516x)
 				if (sTimerPWM[i].bStarted) {
 					vTimerStart(&sTimerPWM[i]); // DUTY比だけ変更する
 				}
-#else
-				if (i >= 2) {
-					vTimerStart(&sTimerPWM[i]); // DUTY比の変更
-				}
-#endif
 			}
 		}
 #ifdef USE_I2C_PORT_AS_PWM_SPECIAL
@@ -3856,22 +3780,6 @@ static void vReceiveIoData(tsRxDataApp *pRx) {
 						}
 					}
 				}
-			}
-		}
-	}
-#endif
-
-	// DAC の出力を行う
-#if defined(JN514x)
-	{
-		int i;
-		for (i = 0; i < 2; i++) {
-			if (sAppData.sIOData_now.au16OutputPWMDuty[i] != 0xFFFF) {
-				int j = (sAppData.sIOData_now.au16OutputDAC[i] << 2) * 4096 / ADC_MAC_MV;
-				if (j >= 4095) j = 4095;
-				sAppData.sIOData_now.au16OutputDAC_val[i] = j;
-
-				// vAHI_DacOutput(/* E_AHI_AP_DAC_1 */ i, j); // ADCとの干渉を避けるためここでは書き込まない
 			}
 		}
 	}
@@ -4004,31 +3912,10 @@ static void vReceiveIoSettingRequest(tsRxDataApp *pRx) {
 			if (sAppData.sIOData_now.au16OutputPWMDuty[i] != 0xFFFF) {
 				sTimerPWM[i].u16duty =
 						_PWM(sAppData.sIOData_now.au16OutputPWMDuty[i]);
-#if defined(JN516x)
 				if (sTimerPWM[i].bStarted)
 					vTimerStart(&sTimerPWM[i]); // DUTY比だけ変更する
-#else
-							if (i >= 2) {
-								vTimerStart(&sTimerPWM[i]); // DUTY比の変更
-							}
-#endif
 			}
 		}
-
-#if defined(JN514x)
-		// DAC の出力を行う (DUTY 比の指定なのでどうしよう？)
-		{
-			int i;
-			for(i = 0; i < 2; i++) {
-				if (sAppData.sIOData_now.au16OutputPWMDuty[i] != 0xFFFF) {
-					sAppData.sIOData_now.au16OutputDAC_val[i] = sAppData.sIOData_now.au16OutputPWMDuty[i] * 4;
-					if (sAppData.sIOData_now.au16OutputDAC_val[i] > 4095) sAppData.sIOData_now.au16OutputDAC_val[i] = 4095;
-
-					// vAHI_DacOutput(/* E_AHI_AP_DAC_1 */ i, sAppData.sIOData_now.au16OutputDAC_val[i]);
-				}
-			}
-		}
-#endif
 	}
 
 	/* UART 出力 */
@@ -4267,15 +4154,10 @@ static bool_t bUpdateAdcValues() {
 	// ADC が完了したので内部データに保存する
 	sAppData.sIOData_now.au16InputADC[0] =
 			(uint16) sAppData.sObjADC.ai16Result[TEH_ADC_IDX_ADC_1];
-#if defined(JN516x)
 	sAppData.sIOData_now.au16InputADC[1] =
 			(uint16) sAppData.sObjADC.ai16Result[TEH_ADC_IDX_ADC_3];
 	sAppData.sIOData_now.au16InputADC[2] =
 			(uint16) sAppData.sObjADC.ai16Result[TEH_ADC_IDX_ADC_2];
-#elif defined(JN514x)
-	sAppData.sIOData_now.au16InputADC[1] = (uint16)sAppData.sObjADC.ai16Result[TEH_ADC_IDX_ADC_2];
-	sAppData.sIOData_now.au16InputADC[2] = (uint16)sAppData.sObjADC.ai16Result[TEH_ADC_IDX_ADC_3];
-#endif
 	sAppData.sIOData_now.au16InputADC[3] =
 			(uint16) sAppData.sObjADC.ai16Result[TEH_ADC_IDX_ADC_4];
 	sAppData.sIOData_now.i16Temp =
@@ -4401,7 +4283,7 @@ static void vConfig_SetDefaults(tsFlashApp *p) {
 	p->u32baud_safe = UART_BAUD_SAFE;
 	p->u8parity = 0; // none
 
-#ifdef USE_TOCOSTICK
+#ifdef USE_MONOSTICK
 	p->u32Opt = E_APPCONF_OPT_DISABLE_ADC;  // ToCoStick では AI 入力は未接続なので無効化しておく
 	p->u8id = 121; // ToCoStick では親機をデフォルトにする
 #else
@@ -4501,12 +4383,6 @@ static void vSleep(uint32 u32SleepDur_ms, bool_t bPeriodic, bool_t bDeep) {
 
 	// PWM の停止
 	int i;
-#if defined(JN514x)
-	vTimerStop(&sTimerPWM[2]);
-	vTimerDisable(&sTimerPWM[2]);
-	vTimerStop(&sTimerPWM[3]);
-	vTimerDisable(&sTimerPWM[3]);
-#elif defined(JN516x)
 	i = 0;
 	for (; i < 4; i++) {
 		vTimerStop(&sTimerPWM[i]);
@@ -4517,7 +4393,6 @@ static void vSleep(uint32 u32SleepDur_ms, bool_t bPeriodic, bool_t bDeep) {
 	//   この手続を踏まないとハングアップする ;-(
 	bAHI_DoEnableOutputs(TRUE);
 	vAHI_DoSetDataOut(0x3, 0x0);
-#endif
 
 	// stop interrupt source, if interrupt source is still running.
 	vAHI_DioInterruptEnable(0, u32PortInputMask); // 割り込みの解除）

@@ -1,21 +1,6 @@
-/****************************************************************************
- * (C) Mono Wireless Inc. - 2016 all rights reserved.
- *
- * Condition to use: (refer to detailed conditions in Japanese)
- *   - The full or part of source code is limited to use for TWE (The
- *     Wireless Engine) as compiled and flash programmed.
- *   - The full or part of source code is prohibited to distribute without
- *     permission from Mono Wireless.
- *
- * 利用条件:
- *   - 本ソースコードは、別途ソースコードライセンス記述が無い限りモノワイヤレスが著作権を
- *     保有しています。
- *   - 本ソースコードは、無保証・無サポートです。本ソースコードや生成物を用いたいかなる損害
- *     についてもモノワイヤレスは保証致しません。不具合等の報告は歓迎いたします。
- *   - 本ソースコードは、モノワイヤレスが販売する TWE シリーズ上で実行する前提で公開
- *     しています。他のマイコン等への移植・流用は一部であっても出来ません。
- *
- ****************************************************************************/
+/* Copyright (C) 2017 Mono Wireless Inc. All Rights Reserved.    *
+ * Released under MW-SLA-*J,*E (MONO WIRELESS SOFTWARE LICENSE   *
+ * AGREEMENT).                                                   */
 
 #ifndef  CONFIG_H_INCLUDED
 #define  CONFIG_H_INCLUDED
@@ -47,6 +32,7 @@ extern "C" {
 #define APP_ID_ASSIGNED     0x67720102 //!< アプリケーションID。同じIDでないと通信しない。
 #define APP_ID              APP_ID_ASSIGNED //!< アプリケーションID。同じIDでないと通信しない。
 //#define APP_ID              0x67720202 //!< アプリケーションID。同じIDでないと通信しない。
+
 #if APP_ID != APP_ID_ASSIGNED
 # warning "Custom APP_ID used"
 #endif
@@ -65,13 +51,8 @@ extern "C" {
 #define SERCMD_MAXPAYLOAD (SERCMD_SER_PKTLEN*SERCMD_SER_PKTNUM) //!< シリアルメッセージのバッファサイズ
 
 // ADC
-#ifdef JN516x
 #define ADC_MAC_MV 2470 //!< ADCの最大電圧（実際は bandgap 電圧によって変わる）
 #define ADC_MAX_THRES (2050) //!< ADC の振り切れ判定値
-#elif defined(JN514x)
-#define ADC_MAC_MV 2400 //!< ADCの最大電圧（実際は bandgap 電圧によって変わる）
-#define ADC_MAX_THRES (2050) //!< ADC の振り切れ判定値
-#endif
 #define IS_ADC_RANGE_OVER(c) ((c) >= ADC_MAX_THRES) //!< ADCの振り切れ判定
 #define ADC_DELTA_COARSE 64 //!< ADCの変化を判定する幅（粗）  0-2V スケールを想定し、その 5%=100mV
 #define ADC_DELTA_FINE (ADC_DELTA_COARSE/2) //!< ADCの変化を判定する幅（細）
@@ -110,19 +91,12 @@ extern "C" {
 #define LOW_LATENCY_DELAYED_TRANSMIT_COUNTER 7
 
 /**
- * 評価キット 002_L 使用時
- */
-#ifdef USE_DEV_KIT_002_L
-# warning "USE_DEV_KIT_002_L is defined... Special Build."
-#endif
-
-/**
  * ToCoStick 用
  *   - デフォルトで親機になる
  *   - オプションビット 0x00000020 を設定する
  */
-#ifdef USE_TOCOSTICK
-# warning "USE_TOCOSTICK is defined... Special Build."
+#ifdef USE_MONOSTICK
+# warning "USE_MONOSTICK is defined... Special Build."
 #endif
 
 /**

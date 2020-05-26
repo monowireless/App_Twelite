@@ -1,21 +1,6 @@
-/****************************************************************************
- * (C) Mono Wireless Inc. - 2016 all rights reserved.
- *
- * Condition to use: (refer to detailed conditions in Japanese)
- *   - The full or part of source code is limited to use for TWE (The
- *     Wireless Engine) as compiled and flash programmed.
- *   - The full or part of source code is prohibited to distribute without
- *     permission from Mono Wireless.
- *
- * 利用条件:
- *   - 本ソースコードは、別途ソースコードライセンス記述が無い限りモノワイヤレスが著作権を
- *     保有しています。
- *   - 本ソースコードは、無保証・無サポートです。本ソースコードや生成物を用いたいかなる損害
- *     についてもモノワイヤレスは保証致しません。不具合等の報告は歓迎いたします。
- *   - 本ソースコードは、モノワイヤレスが販売する TWE シリーズ上で実行する前提で公開
- *     しています。他のマイコン等への移植・流用は一部であっても出来ません。
- *
- ****************************************************************************/
+/* Copyright (C) 2017 Mono Wireless Inc. All Rights Reserved.    *
+ * Released under MW-SLA-*J,*E (MONO WIRELESS SOFTWARE LICENSE   *
+ * AGREEMENT).                                                   */
 
 #ifndef COMMON_H_
 #define COMMON_H_
@@ -38,28 +23,9 @@
 /*
  * IOポートの定義
  */
-#if defined(JN516x)
-#ifdef USE_DEV_KIT_002_L
-// 評価キットの定義
-#warning "IO CONF IS FOR JN516X DEVKIT!"
-#define PORT_OUT1 17 // KIT の LED
-#define PORT_OUT2 13
-#define PORT_OUT3 12
-#define PORT_OUT4 11
-
-#define PORT_INPUT1 2 // KIT の SW
-#define PORT_INPUT2 3
-#define PORT_INPUT3 10
-#define PORT_INPUT4 9
-
-#define PORT_CONF1 16
-#define PORT_CONF2 18
-#define PORT_CONF3 19
-
-#define PORT_BAUD 4
-#elif defined (USE_TOCOSTICK)
+#ifdef USE_MONOSTICK
 // ToCoStick 用
-#warning "IO CONF IS FOR TOCOSTICK!"
+#warning "IO CONF IS FOR MONOSTICK"
 #define PORT_OUT1 16 // DIO16/18 をスワップ
 #define PORT_OUT2 19
 #define PORT_OUT3 4
@@ -95,40 +61,6 @@
 #define PORT_CONF3 3
 
 #define PORT_BAUD 17
-#endif
-#elif defined(JN514x)
-#if 0
-#define PORT_OUT1 16 // KIT LED1
-#define PORT_OUT2 17 // KIT LED2
-#define PORT_OUT3 18 // KIT LED3
-#define PORT_OUT4 19 // KIT LED4
-
-#define PORT_INPUT1 9 // KIT SW1
-#define PORT_INPUT2 10 // KIT SW2
-#define PORT_INPUT3 11 // KIT SW3
-#define PORT_INPUT4 20 // KIT SW4
-
-#define PORT_CONF1 0
-#define PORT_CONF2 1
-#define PORT_CONF3 8
-#define PORT_BAUD 5
-#else
-#define PORT_OUT1 16 // KIT LED1
-#define PORT_OUT2 17 // KIT LED2
-#define PORT_OUT3 18 // KIT LED3
-#define PORT_OUT4 19 // KIT LED4
-
-#define PORT_INPUT1 9 // KIT SW1
-#define PORT_INPUT2 10 // KIT SW2
-#define PORT_INPUT3 5
-#define PORT_INPUT4 20 // KIT SW4
-
-#define PORT_CONF1 0
-#define PORT_CONF2 1
-#define PORT_CONF3 8
-#define PORT_BAUD 12
-#warning "PWM1->DIO13, PWM2->DIO11"
-#endif
 #endif
 
 #define PORT_OUT_MASK ((1UL << PORT_OUT1) | (1UL << PORT_OUT2) | (1UL << PORT_OUT3) | (1UL << PORT_OUT4))

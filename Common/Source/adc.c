@@ -1,21 +1,6 @@
-/****************************************************************************
- * (C) Mono Wireless Inc. - 2016 all rights reserved.
- *
- * Condition to use: (refer to detailed conditions in Japanese)
- *   - The full or part of source code is limited to use for TWE (The
- *     Wireless Engine) as compiled and flash programmed.
- *   - The full or part of source code is prohibited to distribute without
- *     permission from Mono Wireless.
- *
- * 利用条件:
- *   - 本ソースコードは、別途ソースコードライセンス記述が無い限りモノワイヤレスが著作権を
- *     保有しています。
- *   - 本ソースコードは、無保証・無サポートです。本ソースコードや生成物を用いたいかなる損害
- *     についてもモノワイヤレスは保証致しません。不具合等の報告は歓迎いたします。
- *   - 本ソースコードは、モノワイヤレスが販売する TWE シリーズ上で実行する前提で公開
- *     しています。他のマイコン等への移植・流用は一部であっても出来ません。
- *
- ****************************************************************************/
+/* Copyright (C) 2017 Mono Wireless Inc. All Rights Reserved.    *
+ * Released under MW-SLA-*J,*E (MONO WIRELESS SOFTWARE LICENSE   *
+ * AGREEMENT).                                                   */
 
 /****************************************************************************/
 /***        Include files                                                 ***/
@@ -133,7 +118,6 @@ void vADC_Final(tsObjData_ADC *pData, tsSnsObj *pSnsObj, bool_t bDeinitAPR) {
 
 /** @ingroup ADC
  * ADCの計測値を読み取り、管理構造体に値を保存する。
- * (JN514x の場合、直ぐ読まないと値が変化してしまう)
  *
  * @param pData
  * @return 読み取った値
@@ -226,9 +210,6 @@ vfPrintf(&sSerStream, "\n\rE_ADC STARTED %x", au8AdcSrcTable[pObj->u8IdxMeasurui
 			//pObj->ai16Result[pObj->u8IdxMeasuruing] = (int16)u16AHI_AdcRead();
 			pObj->ai16Result[pObj->u8IdxMeasuruing] = (int16)pObj->u16RegSave;
 
-#ifdef JN516x
-			pObj->ai16Result[pObj->u8IdxMeasuruing] <<= 2; // convert to 12bit
-#endif
 #ifdef SERIAL_DEBUG
 			vfPrintf(&sSerStream, "\n\rADC COMPLETE: SRC(%d)->%d", pObj->u8IdxMeasuruing, pObj->ai16Result[pObj->u8IdxMeasuruing]);
 #endif
@@ -236,57 +217,32 @@ vfPrintf(&sSerStream, "\n\rE_ADC STARTED %x", au8AdcSrcTable[pObj->u8IdxMeasurui
 			// 電源電圧の変換  (ADCVAL -> mV)
 			// 基本的に 2~3.6V を ADC のフルスケールとして測定できるような分圧回路が半導体内部に構成される。
 			// つまりADC値が0なら 2000mV, 4095 なら 3600mV となる。
-			if (   pObj->u8IdxMeasuruing == TEH_ADC_IDX_VOLT
-				&& !IS_SENSOR_TAG_DATA_ERR(pObj->ai16Result[TEH_ADC_IDX_VOLT])) {
+			if (   pObj->u8IdxMeasuruing == TEH_ADC_IDX_VOLT && !IS_SENSOR_TAG_DATA_ERR(pObj->ai16Result[TEH_ADC_IDX_VOLT])) {
 				int16 i16AdcVal = pObj->ai16Result[TEH_ADC_IDX_VOLT];
 
-#ifdef JN514x
-				pObj->ai16Result[TEH_ADC_IDX_VOLT] =
-					(int32)(i16AdcVal) * 100L / 114L; // in mV
-#elif defined(JN516x)
 				// TWE-Lite 用
 				// データシートの情報に基づくなら、2/3 に分圧されていますから、
 				// 10bit最大を 2470mV として mV 値に変換した上、1.5 倍する計算
 				// を行います。
-				pObj->ai16Result[TEH_ADC_IDX_VOLT] = ((int32)(i16AdcVal) * 3705) >> 12;
-#endif
+				pObj->ai16Result[TEH_ADC_IDX_VOLT] = ((int32)(i16AdcVal) * 3705) >> 10;
 			} else
 			// 内蔵温度センサーの変換 (ADCVAL -> 100x degC 23.55℃なら 2355 に変換する)
-			if (   pObj->u8IdxMeasuruing == TEH_ADC_IDX_TEMP
-				&& !IS_SENSOR_TAG_DATA_ERR(pObj->ai16Result[TEH_ADC_IDX_TEMP])) {
+			if (   pObj->u8IdxMeasuruing == TEH_ADC_IDX_TEMP && !IS_SENSOR_TAG_DATA_ERR(pObj->ai16Result[TEH_ADC_IDX_TEMP])) {
 				int16 i16AdcVal = pObj->ai16Result[TEH_ADC_IDX_TEMP];
 
-#ifdef JN514x
-				pObj->ai16Result[TEH_ADC_IDX_TEMP] =
-					(25000L - (((int32)(i16AdcVal - 2560L)) * 183L) + 5L) / 10L; // in 100x degC
-#elif defined(JN516x)
 				// 個体差、ロット差が大きいためキャリブレーションが無いと使えない
 				// y = -0.6204x + 396.94
 				//    x: ADC val[0-1023]
 				//    y: deg-C
-				pObj->ai16Result[TEH_ADC_IDX_TEMP] =
-					((int32)i16AdcVal >> 2)*(-62) + 39694; // in 100x degC
-#endif
+				pObj->ai16Result[TEH_ADC_IDX_TEMP] = ((int32)i16AdcVal)*(-62) + 39694; // in 100x degC
 			} else {
 				// ADC1-4の値。mVで計算する。
-				//   514x(Regular/Strong) と 516x(Lite) ではバンドギャップ電圧が違うので計算式も違う。
-				//   相対スケールのADCも欲しい・・・
 				if (pObj->u8InputRangeMask & u8Src) {
 					// 0-1200mV
-					pObj->ai16Result[pObj->u8IdxMeasuruing] =
-#ifdef JN514x
-						pObj->ai16Result[pObj->u8IdxMeasuruing] * 1200 / 4096;
-#elif defined(JN516x)
-						pObj->ai16Result[pObj->u8IdxMeasuruing] * 1235 / 4096;
-#endif
+					pObj->ai16Result[pObj->u8IdxMeasuruing] = pObj->ai16Result[pObj->u8IdxMeasuruing] * 1235 / 1024;
 				} else {
 					// 0-2400mV
-					pObj->ai16Result[pObj->u8IdxMeasuruing] =
-#ifdef JN514x
-						pObj->ai16Result[pObj->u8IdxMeasuruing] * 2400 / 4096;
-#elif defined(JN516x)
-						pObj->ai16Result[pObj->u8IdxMeasuruing] * 2470 / 4096;
-#endif
+					pObj->ai16Result[pObj->u8IdxMeasuruing] = pObj->ai16Result[pObj->u8IdxMeasuruing] * 2470 / 1024;
 				}
 			}
 

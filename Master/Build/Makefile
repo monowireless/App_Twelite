@@ -1,11 +1,13 @@
 ##########################################################################
-#  * (C) Tokyo Cosmos Electric, Inc. (TOCOS) - 2013 all rights reserved.
+# Copyright (C) 2017 Mono Wireless Inc. All Rights Reserved.
+# Released under MW-SLA-*J,*E (MONO WIRELESS SOFTWARE LICENSE
+# AGREEMENT).
 #
-# TOCOS MAKEFILE TEMPLATE (for ToCoNet application build)
-# ToCoNet のアプリケーションを作成するための Makefile です。
+# MONOWIRELESS MAKEFILE TEMPLATE (for ToCoNet application build)
+# TWELITE NET のアプリケーションを作成するための Makefile です。
 #
 # ディレクトリに格納され使用します（サンプルアプリ参照）
-#  {SDKROOT}/ToCoNet/{ApplicationRoot}/{FirmwareType}/Build/
+#  {SDKROOT}/Wks_ToCoNet/{ApplicationRoot}/{FirmwareType}/Build/
 ##########################################################################
 
 ##########################################################################
@@ -13,8 +15,7 @@
 # チップの選択を行います。指定が無い場合は、外部指定または chipsel.mkの規
 # 定値となります。この変数はファイル名やフォルダ名の決定にも使用されます。
 #
-#TWE_CHIP_MODEL ?= JN5148
-TWE_CHIP_MODEL ?= JN5164
+#TWE_CHIP_MODEL ?= JN5164
 #
 # また TARGET_DIR 変数に .. 、PROJNAME に ../.. のディレクトリ名を格納
 # します。
@@ -93,16 +94,10 @@ CFLAGS += -DDEBUG_OUTPUT
 #  OBJDIR_SUFF += _Debug
 #  TARGET_SUFF += _Debug
 #endif 
-ifeq ($(TWE_DEVKIT),002L)
-  CFLAGS += -DUSE_DEV_KIT_002_L
-  OBJDIR_SUFF += _KIT002L
-  TARGET_SUFF += _KIT002L
-endif
-
-ifeq ($(TWE_DEVKIT),TOCOSTICK)
-  CFLAGS += -DUSE_TOCOSTICK
-  OBJDIR_SUFF += _TOCOSTICK
-  TARGET_SUFF += _TOCOSTICK
+ifeq ($(TWE_DEVKIT),MONOSTICK)
+  CFLAGS += -DUSE_MONOSTICK
+  OBJDIR_SUFF += _MONOSTICK
+  TARGET_SUFF += _MONOSTICK
 endif
 
 ifneq ($(VERSION_DESC),)

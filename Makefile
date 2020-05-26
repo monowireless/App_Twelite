@@ -1,8 +1,8 @@
 #########################################################################
 #
-# MODULE:   TOCOS-00001-IEEE802.15.4-I/O-Switch
+# MODULE:   MONOWIRELESS-00001-IEEE802.15.4-I/O-Switch
 #
-# DESCRIPTION: TCS_00001_Coord MakeFile
+# DESCRIPTION: MW_00001_Coord MakeFile
 #
 ############################################################################
 # 
@@ -31,6 +31,12 @@
 # $Id: Makefile 13257 2009-05-26 15:11:24Z mwild $ 
 #
 #############################################################################
+
+##########################################################################
+# Copyright (C) 2017 Mono Wireless Inc. All Rights Reserved.
+# Released under MW-SLA-*J,*E (MONO WIRELESS SOFTWARE LICENSE
+# AGREEMENT).
+##########################################################################
 
 DIRS	= Master Slave
 
