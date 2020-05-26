@@ -1,8 +1,9 @@
 VERSION_MAIN = 1
 VERSION_SUB  = 6
-VERSION_VAR  = 14
+VERSION_VAR  = 15
 VERSION_DESC = 
 
+#1.6.15 2015/4/28 00000800 ビットで入力DI1-4ポートのプルアップを停止
 #1.6.14 2015/4/27 mode=5 間欠受信モードを追加
 #1.6.13 2015/1/28 bUdateAdcValue() の変化検出が送信を一度でも行う必要があった問題を修正
 #1.6.12 2015/1/22 OptBit 00400000 にて、DO 制御を反転する

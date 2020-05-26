@@ -1670,6 +1670,11 @@ static void vInitHardware(int f_warm_start) {
 
 	// 入力の設定
 	for (i = 0; i < 4; i++) {
+		// オプションビットによるプルアップの停止
+		if (IS_APPCONF_OPT_NO_PULLUP_FOR_INPUT()) {
+			vPortDisablePullup(au8PortTbl_DIn[i]);
+		}
+
 		vPortAsInput(au8PortTbl_DIn[i]);
 	}
 

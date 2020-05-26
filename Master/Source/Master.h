@@ -224,24 +224,25 @@ enum {
 	E_APPCONF_ROLE_SILENT = 0x7F, //!< 何もしない（設定のみ)
 };
 
-#define E_APPCONF_OPT_LOW_LATENCY_INPUT 0x0001UL //!< Hi>Lo を検知後直ぐに送信する。 @ingroup FLASH
-#define E_APPCONF_OPT_REGULAR_PACKET_NO_TRANSMIT 0x0002UL //!< 定期送信を行わない(1秒置き)
-#define E_APPCONF_OPT_REGULAR_PACKET_NO_DISP 0x0004UL //!< 定期送信パケットを表示しない(1秒置きと連射)
-#define E_APPCONF_OPT_NO_ADC_BASED_TRANSMIT 0x0010 //!< ADCの変化に応じた送信を禁止する。 @ingroup FLASH
-#define E_APPCONF_OPT_DISABLE_ADC 0x0020 //!< ADCを計測しない。 @ingroup FLASH
-#define E_APPCONF_OPT_ADC_TO_PWM_RAW_OUT 0x0040 //!< ADC絶対値でPWM出力する @ingroup FLASH
-#define E_APPCONF_OPT_ON_PRESS_TRANSMIT 0x0100UL //!< 押し下げ時のみ送信する特殊動作モード。 @ingroup FLASH
-#define E_APPCONF_OPT_INQUIRE_ON_WAKE 0x0200UL //!< ウェイクアップ時に親機に対して問い合わせを行う。 @ingroup FLASH
-#define E_APPCONF_OPT_ROUTING_CHILD 0x8000UL //!< 中継可能な子機設定。 @ingroup FLASH
-#define E_APPCONF_OPT_ROUTING_HOP2 0x1000UL //!< 中継段数を２にする。 @ingroup FLASH
-#define E_APPCONF_OPT_ROUTING_HOP3 0x2000UL //!< 中継段数な３にする。 @ingroup FLASH
-#define E_APPCONF_OPT_PWM_INVERT 0x10000UL //!< PWMをDUTYを反転する。 @ingroup FLASH
-#define E_APPCONF_OPT_PWM_INIT_LOW 0x20000UL //!< PWMを起床時にLOとする。 @ingroup FLASH
-#define E_APPCONF_OPT_PWM_MOVE_PORTS 0x80000UL //!< PWMの利用ポートを入れ替える (ただし I2C, BPS ピンは無効となる) @ingroup FLASH
-#define E_APPCONF_OPT_DIO_LOW_ON_BOOT 0x100000 //!< 起床時にDIOを２秒だけLOにする (LED点灯) @ingroup FLASH
-#define E_APPCONF_OPT_PWM_LOW_ON_BOOT 0x200000 //!< 起床時にPWMを２秒だけ(AI=100%値)にする (LED点灯) @ingroup FLASH
-#define E_APPCONF_OPT_DO_INVERT 0x400000UL //!< DIO出力を反転する @ingroup FLASH
-#define E_APPCONF_OPT_NO_PULLUP_FOR_OUTPUT 0x800000 //!< 出力ポート DO1-4, PWM1-4 のプルアップを停止する @ingroup FLASH
+#define E_APPCONF_OPT_LOW_LATENCY_INPUT			 	0x000001UL //!< Hi>Lo を検知後直ぐに送信する。 @ingroup FLASH
+#define E_APPCONF_OPT_REGULAR_PACKET_NO_TRANSMIT 	0x000002UL //!< 定期送信を行わない(1秒置き)
+#define E_APPCONF_OPT_REGULAR_PACKET_NO_DISP 		0x000004UL //!< 定期送信パケットを表示しない(1秒置きと連射)
+#define E_APPCONF_OPT_NO_ADC_BASED_TRANSMIT			0x000010UL //!< ADCの変化に応じた送信を禁止する。 @ingroup FLASH
+#define E_APPCONF_OPT_DISABLE_ADC					0x000020UL //!< ADCを計測しない。 @ingroup FLASH
+#define E_APPCONF_OPT_ADC_TO_PWM_RAW_OUT			0x000040UL //!< ADC絶対値でPWM出力する @ingroup FLASH
+#define E_APPCONF_OPT_ON_PRESS_TRANSMIT				0x000100UL //!< 押し下げ時のみ送信する特殊動作モード。 @ingroup FLASH
+#define E_APPCONF_OPT_INQUIRE_ON_WAKE				0x000200UL //!< ウェイクアップ時に親機に対して問い合わせを行う。 @ingroup FLASH
+#define E_APPCONF_OPT_NO_PULLUP_FOR_INPUT			0x000800UL //!< DI1-4 入力にプルアップを適用しない。@ingroup FLASH
+#define E_APPCONF_OPT_ROUTING_HOP2					0x001000UL //!< 中継段数を２にする。 @ingroup FLASH
+#define E_APPCONF_OPT_ROUTING_HOP3					0x002000UL //!< 中継段数な３にする。 @ingroup FLASH
+#define E_APPCONF_OPT_ROUTING_CHILD					0x008000UL //!< 中継可能な子機設定。 @ingroup FLASH
+#define E_APPCONF_OPT_PWM_INVERT					0x010000UL //!< PWMをDUTYを反転する。 @ingroup FLASH
+#define E_APPCONF_OPT_PWM_INIT_LOW					0x020000UL //!< PWMを起床時にLOとする。 @ingroup FLASH
+#define E_APPCONF_OPT_PWM_MOVE_PORTS				0x080000UL //!< PWMの利用ポートを入れ替える (ただし I2C, BPS ピンは無効となる) @ingroup FLASH
+#define E_APPCONF_OPT_DIO_LOW_ON_BOOT				0x100000UL //!< 起床時にDIOを２秒だけLOにする (LED点灯) @ingroup FLASH
+#define E_APPCONF_OPT_PWM_LOW_ON_BOOT				0x200000UL //!< 起床時にPWMを２秒だけ(AI=100%値)にする (LED点灯) @ingroup FLASH
+#define E_APPCONF_OPT_DO_INVERT						0x400000UL //!< DIO出力を反転する @ingroup FLASH
+#define E_APPCONF_OPT_NO_PULLUP_FOR_OUTPUT			0x800000UL //!< 出力ポート DO1-4, PWM1-4 のプルアップを停止する @ingroup FLASH
 
 #define IS_APPCONF_OPT_LOW_LATENCY_INPUT() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_LOW_LATENCY_INPUT) //!< E_APPCONF_OPT_LOW_LATENCY_INPUT 判定 @ingroup FLASH
 #define IS_APPCONF_OPT_REGULAR_PACKET_NO_TRANSMIT() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_REGULAR_PACKET_NO_TRANSMIT) //!< E_APPCONF_OPT_REGULAR_PACKET_NO_TRANSMIT 判定 @ingroup FLASH
@@ -251,6 +252,7 @@ enum {
 #define IS_APPCONF_OPT_ADC_TO_PWM_RAW_OUT() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_ADC_TO_PWM_RAW_OUT) //!< E_APPCONF_OPT_ADC_TO_PWM_RAW_OUT判定 @ingroup FLASH
 #define IS_APPCONF_OPT_ON_PRESS_TRANSMIT() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_ON_PRESS_TRANSMIT) //!< E_APPCONF_OPT_ON_PRESS_TRANSMIT判定 @ingroup FLASH
 #define IS_APPCONF_OPT_INQUIRE_ON_WAKE() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_INQUIRE_ON_WAKE) //!< E_APPCONF_OPT_INQUIRE_ON_WAKE判定 @ingroup FLASH
+#define IS_APPCONF_OPT_NO_PULLUP_FOR_INPUT() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_NO_PULLUP_FOR_INPUT) //!< E_APPCONF_OPT_NO_PULLUP_FOR_INPUT判定 @ingroup FLASH
 #define IS_APPCONF_OPT_ROUTING_CHILD() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_ROUTING_CHILD) //!< E_APPCONF_OPT_ROUTING_END_DEVICE判定 @ingroup FLASH
 #define IS_APPCONF_OPT_ROUTING_HOP2() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_ROUTING_HOP2) //!< E_APPCONF_OPT_ROUTING_HOP2判定 @ingroup FLASH
 #define IS_APPCONF_OPT_ROUTING_HOP3() (sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_ROUTING_HOP3) //!< E_APPCONF_OPT_ROUTING_HOP3判定 @ingroup FLASH
