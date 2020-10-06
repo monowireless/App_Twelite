@@ -12,7 +12,7 @@
 #include "serialInputMgr.h"
 
 #include "config.h"
-#include "common.h"
+//#include "common.h"
 
 /*
  * Version 番号
@@ -117,18 +117,19 @@ extern const uint8 au8IoModeTbl_To_LogicalID[8]; //!< tePortConf2Mode から論�
 #define SERCMD_ID_I2C_COMMAND 0x88
 #define SERCMD_ID_I2C_COMMAND_RESP 0x89
 
-#define SERCMD_ID_GET_MODULE_ADDRESS 0x90
-#define SERCMD_ID_INFORM_MODULE_ADDRESS 0x91
-#define SERCMD_ID_GET_NETWORK_CONFIG 0x92
-#define SERCMD_ID_INFORM_NETWORK_CONFIG 0x93
-#define SERCMD_ID_SET_NETWORK_CONFIG 0x94
+#define SERCMD_ID_ACK 0xF0
+#define SERCMD_ID_GET_MODULE_ADDRESS 0xF1
+//#define SERCMD_ID_INFORM_MODULE_ADDRESS 0x91
+//#define SERCMD_ID_GET_NETWORK_CONFIG 0x92
+//#define SERCMD_ID_INFORM_NETWORK_CONFIG 0x93
+//#define SERCMD_ID_SET_NETWORK_CONFIG 0x94
 
 // Packet CMD IDs
 #define TOCONET_PACKET_CMD_APP_USER_IO_DATA (TOCONET_PACKET_CMD_APP_USER+0) //!< IO の入出力データ
 #define TOCONET_PACKET_CMD_APP_USER_IO_DATA_EXT (TOCONET_PACKET_CMD_APP_USER+1) //!< IO の入出力データ
 
 /* Modbus ASCII output functions */
-void vModbOut_AckNack(tsFILE *pSer, bool_t bAck);
+void vModbOut_RespAck(tsFILE *pSer, bool_t bAck);
 void vModbOut_MySerial(tsFILE *pSer);
 
 bool_t bModbIn_Config(uint8 *p,  tsFlashApp *pConfig);

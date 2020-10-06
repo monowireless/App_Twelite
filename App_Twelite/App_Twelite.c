@@ -128,7 +128,7 @@ static void vSleep(uint32 u32SleepDur_ms, bool_t bPeriodic, bool_t bDeep);
 /****************************************************************************/
 /***        Local Variables                                               ***/
 /****************************************************************************/
-static tsAppData sAppData; //!< アプリケーションデータ  @ingroup MASTER
+tsAppData sAppData; //!< アプリケーションデータ  @ingroup MASTER
 
 tsFILE sSerStream; //!< シリアル出力ストリーム  @ingroup MASTER
 tsSerialPortSetup sSerPort; //!< シリアルポートの設定  @ingroup MASTER
@@ -2667,6 +2667,10 @@ static void vProcessSerialCmd(tsModbusCmd *pSer) {
 		 * モジュール自身へのコマンド (0xDB)
 		 */
 		switch (u8cmd) {
+		case SERCMD_ID_ACK:
+			vModbOut_RespAck(&sSerStream, TRUE);
+			break;
+
 		case SERCMD_ID_GET_MODULE_ADDRESS:
 			vModbOut_MySerial(&sSerStream);
 			break;

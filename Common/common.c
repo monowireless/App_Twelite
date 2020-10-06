@@ -13,6 +13,9 @@
 #include "modbus_ascii.h"
 
 #include "common.h"
+#include "App_Twelite.h"
+
+extern tsAppData sAppData;
 
 /** @ingroup MASTER
  * DI のポート番号のテーブル
@@ -110,22 +113,48 @@ const uint8 au8IoModeTbl_To_LogicalID[8] = {
  */
 extern uint8 au8SerOutBuff[];
 
+/** @ingroup MASTER
+ * 応答を返す
+ * @param pSer SerialStream
+ * @param bStatus True/False
+ */
+void vModbOut_RespAck(tsFILE* pSer, bool_t bStatus) {
+	uint8 *q = au8SerOutBuff;
+
+	S_OCTET(bStatus);
+
+	vSerOutput_ModbusAscii(pSer,
+			SERCMD_ADDR_FR_MODULE,
+			SERCMD_ID_ACK,
+			au8SerOutBuff,
+			q - au8SerOutBuff);
+}
+
 /** @ingroup MBUSA
  * 自身のシリアル番号を出力する（起動時メッセージにも利用）
  * @param pSer 出力先ストリーム
  */
 void vModbOut_MySerial(tsFILE *pSer) {
 	uint8 *q = au8SerOutBuff;
+	uint32 u32ver =
+			  (((uint32)VERSION_MAIN & 0xFF) << 16)
+			| (((uint32)VERSION_SUB & 0xFF) << 8)
+			| (((uint32)VERSION_VAR & 0xFF) << 0);
 
-	S_OCTET(VERSION_MAIN);
-	S_OCTET(VERSION_SUB);
-	S_OCTET(VERSION_VAR);
+//	S_OCTET(VERSION_MAIN);
+//	S_OCTET(VERSION_SUB);
+//	S_OCTET(VERSION_VAR);
 
+	S_BE_DWORD(APP_ID);
+	S_BE_DWORD(u32ver);
+	S_OCTET(sAppData.u8AppLogicalId);
 	S_BE_DWORD(ToCoNet_u32GetSerial());
+	S_OCTET(0x00);
+	S_OCTET(0x01);
 
 	vSerOutput_ModbusAscii(pSer,
 			SERCMD_ADDR_FR_MODULE,
-			SERCMD_ID_INFORM_MODULE_ADDRESS,
+			SERCMD_ID_GET_MODULE_ADDRESS,
 			au8SerOutBuff,
 			q - au8SerOutBuff);
 }
