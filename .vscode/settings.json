@@ -4,11 +4,20 @@
         "App_Twelite/**",
         "App_Twelite_MONOSTICK/**",
         "Common/**",
+        "${env:MWSDK_ROOT}/Tools/VSCode/**",
+        "${env:MWSDK_TWENET_LIBSRC}/include/**",
+        "${env:MWSDK_TWENET_LIBSRC}/src/**",
         "../../Tools/VSCode/**",
         "../../TWENET/current/include/**",
         "../../TWENET/current/src/**"
     ],
     "C_Cpp.default.browse.path": [
+        "App_Twelite/**",
+        "App_Twelite_MONOSTICK/**",
+        "Common/**",
+        "${env:MWSDK_ROOT}/Tools/VSCode/**",
+        "${env:MWSDK_TWENET_LIBSRC}/include/**",
+        "${env:MWSDK_TWENET_LIBSRC}/src/**",
         "../../Tools/VSCode/**",
         "../../TWENET/current/include/**",
         "../../TWENET/current/src/**"
