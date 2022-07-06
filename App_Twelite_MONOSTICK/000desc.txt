@@ -1,3 +1,8 @@
-超簡単！標準アプリ（App_Twelite）
-MONOSTICK用です。
-https://mono-wireless.com/jp/products/TWE-APPS/App_Twelite/
+[JAPANESE]
+TITLE=超簡単！標準アプリ（App_Twelite）
+DESC=MONOSTICK用です。
+URL=https://mono-wireless.com/jp/products/TWE-APPS/App_Twelite/
+[ENGLISH]
+TITLE=App_Twelite for MONOSTICK
+DESC=This application is for MONOSTICK.
+URL=https://mono-wireless.com/jp/products/TWE-APPS/App_Twelite/
