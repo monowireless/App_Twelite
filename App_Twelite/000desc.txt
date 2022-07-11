@@ -1,8 +1,10 @@
 [JAPANESE]
 TITLE=超簡単！標準アプリ（App_Twelite）
-DESC=TWELITE-トワイライト、TWELITE DIP-トワイライトディップに標準インストールされているアプリです。簡単にすぐにお使いいただけます。
+DESC=すばやく簡単にお使いいただけます。
+TWELITE (SMD) および TWELITE DIP にプリインストールされています。
 URL=https://mono-wireless.com/jp/products/TWE-APPS/App_Twelite/index.html
 [ENGLISH]
 TITLE=App_Twelite
-DESC=This application is installed on TWELITE and TWELITE DIP. Easy and immediate use.
+DESC=Easy and immediate use.
+Pre-installed on TWELITE (SMD) and TWELITE DIP.
 URL=https://mono-wireless.com/jp/products/TWE-APPS/App_Twelite/index.html
